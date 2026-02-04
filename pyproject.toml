@@ -31,6 +31,14 @@ build-backend = "poetry.core.masonry.api"
 python_version = 3.13
 ignore_missing_imports = true
 strict = true
+exclude = '''
+/(
+  | migrations
+  | venv
+  | .venv
+  | __pycache__
+)/
+'''
 
 [tool.black]
 line-length = 79
