@@ -33,24 +33,3 @@ Use --reload to enable auto-reload on code changes.
 
 
 
-
-
-## Git Workflow
-
-This document describes a **safe and predictable Git workflow** for a team project where:
-
-- `main` — stable branch (production / releases)
-- `develop` — main development branch
-- each task is implemented in a **separate feature branch**
-
-The goal is to **minimize merge conflicts**, avoid losing changes, and keep the commit history clean and readable.
-
----
-
-### 0. General Rules
-
-- ❌ **NEVER push directly to** `develop` **or** `main`
-- ✅ All work must be done via **feature branches** (each developer creates their own branch)
-- ✅ Before any `pull`, `merge`, or `rebase`, the working tree **must be clean** (no uncommitted changes)
-- ✅ All changes are merged into the repository **only via Pull Requests**
-
