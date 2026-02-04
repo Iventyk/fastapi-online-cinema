@@ -94,14 +94,23 @@ poetry run pytest
 ```bash
 poetry run pytest --cov=./ --cov-report=xml
 ```
-#### 3.3 Check the status, add needed files and make commits when needed:
+
+#### 3.3 Document Your Work (if necessary)
+
+Before committing, if you have added new functionality or changed behavior, **update the README or project documentation** to reflect your changes. This ensures that your team and future contributors understand the new features or updates.
+
+- Describe **what was implemented**  
+- Include **any setup instructions** if new dependencies or configurations were added  
+- Explain **how to use the new feature** if applicable  
+
+#### 3.4 Check the status, add needed files and make commits when needed:
 
 ```bash
 git status
 git add .
 ```
 
-#### 3.4 Commits
+#### 3.5 Commits
 
 A commit = a logically complete piece of work. Commit messages should:
 
