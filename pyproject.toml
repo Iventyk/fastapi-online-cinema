@@ -1,10 +1,13 @@
 [tool.poetry]
-package-mode = false
 name = "fastapi-online-cinema"
 version = "0.1.0"
 description = "Online cinema backend API"
 authors = ["Ivan Ventyk <ivanventik@gmail.com>"]
 license = "MIT"
+
+packages = [
+    { include = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.13"
@@ -18,9 +21,7 @@ pytest = "^9.0.2"
 mypy = "^1.19.1"
 flake8 = "^7.3.0"
 black = "^26.1.0"
-aiosqlite = "^0.22.1"
-pydantic = {extras = ["email"], version = "^2.12.5"}
-bcrypt = "^5.0.0"
+pytest-cov = "^7.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -30,6 +31,14 @@ build-backend = "poetry.core.masonry.api"
 python_version = 3.13
 ignore_missing_imports = true
 strict = true
+exclude = '''
+/(
+  | migrations
+  | venv
+  | .venv
+  | __pycache__
+)/
+'''
 
 [tool.black]
 line-length = 79
