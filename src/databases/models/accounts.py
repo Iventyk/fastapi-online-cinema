@@ -39,7 +39,7 @@ class UserGroupModel(Base):
         "UserModel", back_populates="group"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<UserGroupModel(id={self.id}, name={self.name})>"
 
 

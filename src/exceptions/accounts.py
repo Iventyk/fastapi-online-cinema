@@ -1,6 +1,6 @@
 class BaseAccountException(Exception):
 
-    def __init__(self, message=None):
+    def __init__(self, message=None) -> None:
         if message is None:
             message = "Something went wrong during account operation"
         super().__init__(message)
