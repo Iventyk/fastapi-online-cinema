@@ -1,0 +1,91 @@
+from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.databases.dev_engine import get_db
+from src.databases.models.movies import Director, Movie
+from src.schemas.directors import DirectorCreate, DirectorRead
+
+router = APIRouter(prefix="/directors", tags=["Directors"])
+
+
+@router.get("", response_model=List[DirectorRead])
+async def get_directors(db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(
+            Director.id,
+            Director.name,
+            func.count(Movie.id).label("movies_count"),
+        )
+        .outerjoin(Director.movies)
+        .group_by(Director.id)
+        .order_by(Director.name)
+    )
+
+    result = await db.execute(stmt)
+    return result.mappings().all()
+
+
+@router.get("/{director_id}/movies")
+async def get_director_movies(
+    director_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Director).where(Director.id == director_id)
+    )
+    director = result.scalar_one_or_none()
+
+    if not director:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Director not found",
+        )
+
+    return director.movies
+
+
+@router.post(
+    "",
+    response_model=DirectorRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_director(
+    data: DirectorCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    director = Director(name=data.name)
+    db.add(director)
+    await db.commit()
+    await db.refresh(director)
+
+    return DirectorRead(
+        id=director.id,
+        name=director.name,
+        movies_count=0,
+    )
+
+
+@router.delete(
+    "/{director_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_director(
+    director_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Director).where(Director.id == director_id)
+    )
+    director = result.scalar_one_or_none()
+
+    if not director:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Director not found",
+        )
+
+    await db.delete(director)
+    await db.commit()
