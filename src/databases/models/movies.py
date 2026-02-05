@@ -20,6 +20,7 @@ from sqlalchemy.orm import (
 
 from .base import Base
 
+
 if TYPE_CHECKING:
     from src.databases.models import CartItem
 
