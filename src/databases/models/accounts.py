@@ -15,6 +15,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 from src.databases.models.base import Base
+from src.validators import validate_password
+from src.securuty import hash_password, verify_password
 
 
 class UserGroupEnum(StrEnum):
@@ -92,6 +94,11 @@ class UserModel(Base):
 
     @password.setter
     def password(self, password: str) -> None:
-        # TODO passhord Hashing and validataion
+        password = validate_password(password)
 
-        self._hashed_password = password
+        hashed_password = hash_password(password)
+
+        self._hashed_password = hashed_password
+
+    def check_password(self, password: str) -> bool:
+        return verify_password(password, self._hashed_password)

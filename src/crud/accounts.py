@@ -16,7 +16,7 @@ async def create_new_user(
         db: Annotated[AsyncSession, Depends(get_db)],
         user_data: UserCreateSchema,
 ) -> UserReadSchema:
-    existing_user = get_user_by_email(db=db, email=user_data.email)
+    existing_user = await get_user_by_email(db=db, email=user_data.email)
     if existing_user:
         raise UserAlreadyExist(
             message="User with provided email already exists"
@@ -29,8 +29,8 @@ async def create_new_user(
     )
     user_group = result.scalar_one_or_none()
     user = await UserModel.create(
-        email=user_data.email,
-        raw_password=user_data.password,
+        email=user_data["email"],
+        raw_password=user_data["password"],
         group_id=user_group.id,
     )
     db.add(user)

@@ -20,6 +20,7 @@ flake8 = "^7.3.0"
 black = "^26.1.0"
 aiosqlite = "^0.22.1"
 pydantic = {extras = ["email"], version = "^2.12.5"}
+bcrypt = "^5.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

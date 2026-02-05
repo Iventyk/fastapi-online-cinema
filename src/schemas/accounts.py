@@ -21,9 +21,9 @@ class UserCreateSchema(UserBaseSchema):
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v: str):
+    def validate_password(cls, v: str) -> str:
         try:
-            validate_password(password=v)
+            return validate_password(password=v)
         except ValueError:
             raise
 
