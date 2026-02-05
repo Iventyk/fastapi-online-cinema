@@ -10,5 +10,5 @@ __all__ = [
     "Settings",
     "TestingSettings",
     "get_settings",
-    "get_jwt_manager"
+    "get_jwt_manager",
 ]

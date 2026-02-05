@@ -87,37 +87,39 @@ class UserModel(Base):
     activation_token: Mapped[Optional["ActivationTokenModel"]] = relationship(
         "ActivationTokenModel",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
-    password_reset_token: Mapped[
-        Optional["PasswordResetTokenModel"]] = relationship(
-        "PasswordResetTokenModel",
-        back_populates="user",
-        cascade="all, delete-orphan"
+    password_reset_token: Mapped[Optional["PasswordResetTokenModel"]] = (
+        relationship(
+            "PasswordResetTokenModel",
+            back_populates="user",
+            cascade="all, delete-orphan",
+        )
     )
 
     refresh_tokens: Mapped[List["RefreshTokenModel"]] = relationship(
         "RefreshTokenModel",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     profile: Mapped[Optional["UserProfileModel"]] = relationship(
-        "UserProfileModel",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "UserProfileModel", back_populates="user", cascade="all, delete-orphan"
     )
 
-    def __repr__(self):
-        return f"<UserModel(id={self.id}, email={self.email}, is_active={self.is_active})>"
+    def __repr__(self) -> str:
+        return (
+            f"<UserModel(id={self.id}, email={self.email}, "
+            f"is_active={self.is_active})>"
+        )
 
     def has_group(self, group_name: UserGroupEnum) -> bool:
         return self.group.name == group_name
 
     @classmethod
     async def create(
-            cls, email: str, raw_password: str, group_id: int | Mapped[int]
+        cls, email: str, raw_password: str, group_id: int | Mapped[int]
     ) -> "UserModel":
         """
         Factory method to create a new UserModel instance.
@@ -161,14 +163,13 @@ class UserProfileModel(Base):
     info: Mapped[Optional[str]] = mapped_column(Text)
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True)
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
     user: Mapped[UserModel] = relationship(
         "UserModel", back_populates="profile"
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<UserProfileModel(id={self.id}, first_name={self.first_name}, "
             f"last_name={self.last_name}, "
@@ -179,8 +180,9 @@ class UserProfileModel(Base):
 class TokenBaseModel(Base):
     __abstract__ = True
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True,
-                                    autoincrement=True)
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
     token: Mapped[str] = mapped_column(
         String(64),
         unique=True,
@@ -189,7 +191,7 @@ class TokenBaseModel(Base):
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc) + timedelta(days=1)
+        default=lambda: datetime.now(timezone.utc) + timedelta(days=1),
     )
 
     user_id: Mapped[int] = mapped_column(
@@ -205,13 +207,12 @@ class ActivationTokenModel(TokenBaseModel):
     )
 
     __table_args__ = (
-        UniqueConstraint(
-            "user_id", name="unique_activation_token_for_user"
-        ),)
+        UniqueConstraint("user_id", name="unique_activation_token_for_user"),
+    )
 
     @classmethod
     def create(
-            cls, user_id: int | Mapped[int], token: str
+        cls, user_id: int | Mapped[int], token: str
     ) -> "ActivationTokenModel":
         """
         Factory method to create a new RefreshTokenModel instance.
@@ -221,9 +222,11 @@ class ActivationTokenModel(TokenBaseModel):
         )
         return cls(user_id=user_id, expires_at=expires_at, token=token)
 
-    def __repr__(self):
-        return (f"<ActivationTokenModel(id={self.id}, "
-                f"token={self.token}, expires_at={self.expires_at})>")
+    def __repr__(self) -> str:
+        return (
+            f"<ActivationTokenModel(id={self.id}, "
+            f"token={self.token}, expires_at={self.expires_at})>"
+        )
 
 
 class PasswordResetTokenModel(TokenBaseModel):
@@ -233,13 +236,13 @@ class PasswordResetTokenModel(TokenBaseModel):
         "UserModel", back_populates="password_reset_token"
     )
 
-    __table_args__ = (UniqueConstraint(
-        "user_id", name="unique_reset_token_for_user"
-    ),)
+    __table_args__ = (
+        UniqueConstraint("user_id", name="unique_reset_token_for_user"),
+    )
 
     @classmethod
     def create(
-            cls, user_id: int | Mapped[int], token: str
+        cls, user_id: int | Mapped[int], token: str
     ) -> "PasswordResetTokenModel":
         """
         Factory method to create a new RefreshTokenModel instance.
@@ -249,9 +252,11 @@ class PasswordResetTokenModel(TokenBaseModel):
         )
         return cls(user_id=user_id, expires_at=expires_at, token=token)
 
-    def __repr__(self):
-        return (f"<PasswordResetTokenModel(id={self.id}, "
-                f"token={self.token}, expires_at={self.expires_at})>")
+    def __repr__(self) -> str:
+        return (
+            f"<PasswordResetTokenModel(id={self.id}, "
+            f"token={self.token}, expires_at={self.expires_at})>"
+        )
 
 
 class RefreshTokenModel(TokenBaseModel):
@@ -269,7 +274,7 @@ class RefreshTokenModel(TokenBaseModel):
 
     @classmethod
     def create(
-            cls, user_id: int | Mapped[int], token: str
+        cls, user_id: int | Mapped[int], token: str
     ) -> "RefreshTokenModel":
         """
         Factory method to create a new RefreshTokenModel instance.
@@ -279,6 +284,8 @@ class RefreshTokenModel(TokenBaseModel):
         )
         return cls(user_id=user_id, expires_at=expires_at, token=token)
 
-    def __repr__(self):
-        return (f"<RefreshTokenModel(id={self.id}, "
-                f"token={self.token}, expires_at={self.expires_at})>")
+    def __repr__(self) -> str:
+        return (
+            f"<RefreshTokenModel(id={self.id}, "
+            f"token={self.token}, expires_at={self.expires_at})>"
+        )

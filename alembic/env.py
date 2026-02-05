@@ -14,7 +14,7 @@ from src.databases.models import (
     UserProfileModel,
     ActivationTokenModel,
     RefreshTokenModel,
-    PasswordResetTokenModel
+    PasswordResetTokenModel,
 )  # noqa
 from src.databases import Base
 

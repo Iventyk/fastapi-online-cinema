@@ -36,18 +36,20 @@ def get_settings() -> BaseAppSettings:
         DEV_SYNC_DATABASE_URL=base_url,
     )
 
+
 def get_jwt_auth_manager(
-        settings: Annotated[BaseAppSettings, Depends(get_settings)]
+    settings: Annotated[BaseAppSettings, Depends(get_settings)],
 ) -> JWTAuthManagerInterface:
     """
     Create and return a JWT authentication manager instance.
 
-    This function uses the provided application settings to instantiate a JWTAuthManager, which implements
-    the JWTAuthManagerInterface. The manager is configured with secret keys for access and refresh tokens
+    This function uses the provided application settings to instantiate a
+    JWTAuthManager, which implements the JWTAuthManagerInterface.
+    The manager is configured with secret keys for access and refresh tokens
     as well as the JWT signing algorithm specified in the settings.
 
     Args:
-        settings (BaseAppSettings, optional): The application settings instance.
+        settings (BaseAppSettings, optional): The application settings instance
         Defaults to the output of get_settings().
 
     Returns:
@@ -57,5 +59,5 @@ def get_jwt_auth_manager(
     return JWTAuthManager(
         secret_key_access=settings.SECRET_KEY_ACCESS,
         secret_key_refresh=settings.SECRET_KEY_REFRESH,
-        algorithm=settings.JWT_SIGNING_ALGORITHM
+        algorithm=settings.JWT_SIGNING_ALGORITHM,
     )

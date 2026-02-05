@@ -29,6 +29,9 @@ class BaseAppSettings(BaseSettings):
     REFRESH_TOKEN_DAYS: int = 7
     ACCESS_KEY_TIMEDELTA_MINUTES: int = 60
 
+    SECRET_KEY_ACCESS: str
+    SECRET_KEY_REFRESH: str
+    JWT_SIGNING_ALGORITHM: str
 
     EMAIL_HOST: str = "host"
     EMAIL_PORT: int = 25

@@ -1,6 +1,7 @@
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.models import (
     UserModel,
@@ -10,7 +11,7 @@ from src.databases.models import (
 
 
 @pytest.mark.asyncio
-async def test_create_user_with_group(async_session):
+async def test_create_user_with_group(async_session: AsyncSession) -> None:
     group = UserGroupModel(name=UserGroupEnum.USER)
     async_session.add(group)
     await async_session.commit()
@@ -33,7 +34,7 @@ async def test_create_user_with_group(async_session):
 
 
 @pytest.mark.asyncio
-async def test_unique_email_constraint(async_session):
+async def test_unique_email_constraint(async_session: AsyncSession) -> None:
     group = UserGroupModel(name=UserGroupEnum.USER)
     async_session.add(group)
     await async_session.commit()
@@ -56,7 +57,9 @@ async def test_unique_email_constraint(async_session):
 
 
 @pytest.mark.asyncio
-async def test_user_deleted_when_group_deleted(async_session):
+async def test_user_deleted_when_group_deleted(
+    async_session: AsyncSession,
+) -> None:
     group = UserGroupModel(name=UserGroupEnum.ADMIN)
     async_session.add(group)
     await async_session.commit()

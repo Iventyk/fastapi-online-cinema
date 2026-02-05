@@ -4,11 +4,16 @@ from fastapi import APIRouter, status, HTTPException
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.crud import create_new_user, get_list_of_users
+from src.crud import create_new_user, get_list_of_users, login_user
 from src.databases import get_db
-from src.config import get_jwt_manager
-from src.exceptions import BaseAccountException
-from src.schemas import UserReadSchema, UserCreateSchema
+from src.config import get_jwt_manager, Settings, get_settings
+from src.exceptions import BaseAccountException, IncorrectCredentials
+from src.schemas import (
+    UserReadSchema,
+    UserCreateSchema,
+    UserLoginSchema,
+    LoginResponseSchema,
+)
 from src.securuty import JWTAuthManagerInterface
 
 account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
@@ -21,9 +26,7 @@ account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
 )
 async def create_account(
     db: Annotated[AsyncSession, Depends(get_db)],
-    jwt_manager: Annotated[
-        JWTAuthManagerInterface, Depends(get_jwt_manager)
-    ],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
     user_data: UserCreateSchema,
 ) -> UserReadSchema:
     try:
@@ -44,7 +47,7 @@ async def create_account(
     response_model=list[UserReadSchema],
 )
 async def get_accounts(
-        db: Annotated[AsyncSession, Depends(get_db)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[UserReadSchema]:
     try:
         result = await get_list_of_users(
@@ -52,6 +55,31 @@ async def get_accounts(
         )
         return result
     except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
+        )
+
+
+@account_router.post(
+    "/login/",
+    status_code=status.HTTP_200_OK,
+    response_model=LoginResponseSchema,
+)
+async def login_for_accounts(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    login_data: UserLoginSchema,
+) -> LoginResponseSchema:
+    try:
+        result = await login_user(
+            db=db,
+            jwt_manager=jwt_manager,
+            settings=settings,
+            login_data=login_data,
+        )
+        return result
+    except IncorrectCredentials as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
         )

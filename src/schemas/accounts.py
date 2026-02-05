@@ -35,8 +35,12 @@ class UserReadSchema(UserBaseSchema):
     is_active: bool
 
 
-class UserGroupSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class UserLoginSchema(BaseModel):
+    email: EmailStr
+    password: str
 
-    id: int
-    name: str
+
+class LoginResponseSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
