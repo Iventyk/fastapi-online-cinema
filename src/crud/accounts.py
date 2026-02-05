@@ -6,17 +6,29 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.databases.models import UserModel, UserGroupModel, UserGroupEnum
+from src.databases.models import (
+    UserModel,
+    UserGroupModel,
+    UserGroupEnum,
+    ActivationTokenModel,
+)
 from src.exceptions import UserAlreadyExist, UserGroupNotExist
 from src.schemas import UserCreateSchema, UserReadSchema
 from src.databases import get_db
+from src.config import get_jwt_manager
+from src.securuty import JWTAuthManagerInterface
 
 
 async def create_new_user(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    user_data: UserCreateSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)
+        ],
+        user_data: UserCreateSchema,
 ) -> UserReadSchema:
     existing_user = await get_user_by_email(db=db, email=user_data.email)
+
+
     if existing_user:
         raise UserAlreadyExist(
             message="User with provided email already exists"
@@ -39,8 +51,20 @@ async def create_new_user(
     )
 
     db.add(user)
+    await db.flush()
+
+
+    token = jwt_manager.create_activation_token()
+    activation_token = ActivationTokenModel.create(
+        token=token,
+        user_id=user.id,
+
+    )
+    db.add(activation_token)
     await db.commit()
     await db.refresh(user)
+
+    # TODO Future refractor onto celery task: send_activation_email
 
     return UserReadSchema(
         id=user.id,
@@ -50,8 +74,8 @@ async def create_new_user(
 
 
 async def get_user_by_email(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    email: EmailStr,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        email: EmailStr,
 ) -> UserModel | None:
     result = await db.execute(
         select(UserModel)
@@ -63,9 +87,9 @@ async def get_user_by_email(
 
 
 async def get_list_of_users(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    skip: int = 0,
-    limit: int = 25,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        skip: int = 0,
+        limit: int = 25,
 ) -> list[UserReadSchema]:
     result = await db.scalars(
         select(UserModel)

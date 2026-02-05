@@ -23,7 +23,12 @@ class BaseAppSettings(BaseSettings):
     DEV_DATABASE_URL: str
     API_V1_PREFIX: str = "/api/v1"
     DEV_SYNC_DATABASE_URL: str
-    LOGIN_TIME_DAYS: int = 7
+
+    ACTIVATE_TOKEN_DAYS: int = 1
+    RESET_TOKEN_DURATION: int = 1
+    REFRESH_TOKEN_DAYS: int = 7
+    ACCESS_KEY_TIMEDELTA_MINUTES: int = 60
+
 
     EMAIL_HOST: str = "host"
     EMAIL_PORT: int = 25

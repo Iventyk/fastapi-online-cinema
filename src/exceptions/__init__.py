@@ -3,9 +3,12 @@ from src.exceptions.accounts import (
     UserAlreadyExist,
     UserGroupNotExist,
 )
+from src.exceptions.security import TokenExpiredError, InvalidTokenError
 
 __all__ = [
     "BaseAccountException",
     "UserAlreadyExist",
     "UserGroupNotExist",
+    "TokenExpiredError",
+    "InvalidTokenError",
 ]

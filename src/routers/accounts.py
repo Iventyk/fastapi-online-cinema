@@ -6,24 +6,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.crud import create_new_user, get_list_of_users
 from src.databases import get_db
+from src.config import get_jwt_manager
 from src.exceptions import BaseAccountException
 from src.schemas import UserReadSchema, UserCreateSchema
+from src.securuty import JWTAuthManagerInterface
 
 account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
 @account_router.post(
-    "/",
+    "/register/",
     status_code=status.HTTP_201_CREATED,
     response_model=UserReadSchema,
 )
 async def create_account(
     db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[
+        JWTAuthManagerInterface, Depends(get_jwt_manager)
+    ],
     user_data: UserCreateSchema,
 ) -> UserReadSchema:
     try:
         return await create_new_user(
             db=db,
+            jwt_manager=jwt_manager,
             user_data=user_data,
         )
     except BaseAccountException as error:
@@ -38,7 +44,7 @@ async def create_account(
     response_model=list[UserReadSchema],
 )
 async def get_accounts(
-    db: Annotated[AsyncSession, Depends(get_db)],
+        db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[UserReadSchema]:
     try:
         result = await get_list_of_users(
