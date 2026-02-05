@@ -3,26 +3,21 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
-    AsyncSession
+    AsyncSession,
 )
 
 from src.config import get_settings
-
 
 settings = get_settings()
 
 
 engine = create_async_engine(
-    url=settings.DEV_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    url=settings.DEV_DATABASE_URL, connect_args={"check_same_thread": False}
 )
 
 
 AsyncSessionLocal = async_sessionmaker(
-    autoflush=False,
-    autocommit=False,
-    expire_on_commit=False,
-    bind=engine
+    autoflush=False, autocommit=False, expire_on_commit=False, bind=engine
 )
 
 

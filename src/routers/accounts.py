@@ -9,7 +9,6 @@ from src.databases import get_db
 from src.exceptions import BaseAccountException
 from src.schemas import UserReadSchema, UserCreateSchema
 
-
 account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
@@ -19,9 +18,9 @@ account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
     response_model=UserReadSchema,
 )
 async def create_account(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        user_data: UserCreateSchema,
-):
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_data: UserCreateSchema,
+) -> UserReadSchema:
     try:
         return await create_new_user(
             db=db,
@@ -29,8 +28,7 @@ async def create_account(
         )
     except BaseAccountException as error:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error)
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
         )
 
 
@@ -40,8 +38,8 @@ async def create_account(
     response_model=list[UserReadSchema],
 )
 async def get_accounts(
-        db: Annotated[AsyncSession, Depends(get_db)],
-):
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> list[UserReadSchema]:
     try:
         result = await get_list_of_users(
             db=db,
@@ -49,6 +47,5 @@ async def get_accounts(
         return result
     except Exception as error:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(error)
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
         )

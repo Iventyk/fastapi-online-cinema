@@ -9,12 +9,12 @@ class UserBaseSchema(BaseModel):
 
 
 class UserCreateSchema(UserBaseSchema):
-    group: UserGroupEnum = None
+    group: UserGroupEnum | None = None
     password: str
 
     @field_validator("email")
     @classmethod
-    def validate_corporate_email(cls, v: str):
+    def validate_corporate_email(cls, v: str) -> str:
         if "temporary-mail.com" in v:
             raise ValueError("Temporary mails are not allowed")
         return v.lower()

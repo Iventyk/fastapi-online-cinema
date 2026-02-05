@@ -10,7 +10,7 @@ from sqlalchemy import (
     func,
     DateTime,
     ForeignKey,
-    Enum
+    Enum,
 )
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
@@ -60,14 +60,14 @@ class UserModel(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(),
-        onupdate=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
     group_id: Mapped[int] = mapped_column(
-        ForeignKey(
-            "user_groups.id", ondelete="CASCADE"
-        ), nullable=True
+        ForeignKey("user_groups.id", ondelete="CASCADE"), nullable=True
     )
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel", back_populates="users"
@@ -75,7 +75,7 @@ class UserModel(Base):
 
     @classmethod
     async def create(
-            cls, email: str, raw_password: str, group_id: int | Mapped[int]
+        cls, email: str, raw_password: str, group_id: int | Mapped[int]
     ) -> "UserModel":
         """
         Factory method to create a new UserModel instance.
@@ -90,7 +90,8 @@ class UserModel(Base):
     @property
     def password(self) -> None:
         raise AttributeError(
-            "Password is write-only. Use the setter to set the password.")
+            "Password is write-only. Use the setter to set the password."
+        )
 
     @password.setter
     def password(self, password: str) -> None:

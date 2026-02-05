@@ -19,6 +19,15 @@ def get_settings() -> BaseAppSettings:
     """
 
     environment = os.environ.get("ENVIRONMENT", "developing")
+    base_url = os.environ.get(
+        "DEV_DATABASE_URL", "sqlite+aiosqlite:///bbc_cinema.db"
+    )
     if environment == "testing":
-        return TestingSettings()
-    return Settings()
+        return TestingSettings(
+            DEV_DATABASE_URL=base_url,
+            DEV_SYNC_DATABASE_URL=base_url,
+        )
+    return Settings(
+        DEV_DATABASE_URL=base_url,
+        DEV_SYNC_DATABASE_URL=base_url,
+    )
