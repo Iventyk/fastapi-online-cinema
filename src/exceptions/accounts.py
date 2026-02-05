@@ -12,3 +12,11 @@ class UserAlreadyExist(BaseAccountException):
 
 class UserGroupNotExist(BaseAccountException):
     pass
+
+
+class UserDoesNotExist(BaseAccountException):
+    pass
+
+
+class UserPermissionDenied(BaseAccountException):
+    pass
