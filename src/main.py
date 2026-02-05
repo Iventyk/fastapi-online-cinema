@@ -1,12 +1,23 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
+from src.databases.dev_engine import AsyncSessionLocal
+from src.databases.populate import seed_groups
 from src.routers import api_v1_router
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with AsyncSessionLocal() as session:
+        await seed_groups(session)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 app.include_router(api_v1_router)
