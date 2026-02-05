@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum, auto
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from pydantic import EmailStr
 from sqlalchemy import (
@@ -17,6 +17,10 @@ from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.databases.models.base import Base
 from src.validators import validate_password
 from src.securuty import hash_password, verify_password
+
+
+if TYPE_CHECKING:
+    from src.databases.models import Cart
 
 
 class UserGroupEnum(StrEnum):
@@ -71,6 +75,11 @@ class UserModel(Base):
     )
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel", back_populates="users"
+    )
+    cart: Mapped["Cart"] = relationship(
+        "Cart",
+        back_populates="user",
+        uselist=False
     )
 
     @classmethod

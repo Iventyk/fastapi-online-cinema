@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     Table,
@@ -19,6 +19,10 @@ from sqlalchemy.orm import (
 )
 
 from .base import Base
+
+
+if TYPE_CHECKING:
+    from src.databases.models import CartItem
 
 
 movie_genres = Table(
@@ -146,4 +150,8 @@ class Movie(Base):
         secondary=movie_directors,
         back_populates="movies",
         lazy="selectin",
+    )
+    cart_items: Mapped[List["CartItem"]] = relationship(
+        "CartItem",
+        back_populates="movie"
     )
