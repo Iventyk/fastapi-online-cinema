@@ -1,5 +1,5 @@
-import uuid
-from typing import List, Optional
+from uuid import UUID, uuid4
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     Table,
@@ -20,6 +20,10 @@ from sqlalchemy.orm import (
 
 from .base import Base
 from src.databases.models.favorites import Favorite
+
+if TYPE_CHECKING:
+    from src.databases.models import CartItem
+
 
 movie_genres = Table(
     "movie_genres",
@@ -125,8 +129,8 @@ class Movie(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    uuid: Mapped[uuid.UUID] = mapped_column(
-        default=uuid.uuid4,
+    uuid: Mapped[UUID] = mapped_column(
+        default=uuid4,
         unique=True,
         nullable=False,
     )
@@ -178,4 +182,7 @@ class Movie(Base):
         "Favorite",
         back_populates="movie",
         cascade="all, delete-orphan",
+    )
+    cart_items: Mapped[List["CartItem"]] = relationship(
+        "CartItem", back_populates="movie"
     )

@@ -1,6 +1,6 @@
 from datetime import datetime, date, timezone, timedelta
 from enum import StrEnum, auto
-from typing import List, Optional
+from typing import List, TYPE_CHECKING, Optional
 
 from pydantic import EmailStr
 from sqlalchemy import (
@@ -22,6 +22,10 @@ from src.databases.models.base import Base
 from src.validators import validate_password
 from src.securuty import hash_password, verify_password
 from src.databases.models.favorites import Favorite
+
+if TYPE_CHECKING:
+    from src.databases.models import Cart, Order
+
 
 settings = get_settings()
 
@@ -83,6 +87,12 @@ class UserModel(Base):
     )
     group: Mapped["UserGroupModel"] = relationship(
         "UserGroupModel", back_populates="users"
+    )
+    cart: Mapped["Cart"] = relationship(
+        "Cart", back_populates="user", uselist=False
+    )
+    orders: Mapped[List["Order"]] = relationship(
+        "Order", back_populates="user", cascade="all, delete-orphan"
     )
 
     activation_token: Mapped[Optional["ActivationTokenModel"]] = relationship(

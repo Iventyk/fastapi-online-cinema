@@ -30,6 +30,7 @@ from src.schemas import (
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
 from src.securuty import JWTAuthManagerInterface
+from src.services import sync_guest_cart_to_user
 
 
 async def create_new_user(
@@ -72,6 +73,11 @@ async def create_new_user(
     await db.commit()
     await db.refresh(user)
 
+    await sync_guest_cart_to_user(
+        db=db,
+        user_id=user.id,
+        guest_movie_ids=user_data.guest_cart_items,
+    )
     # TODO Future refractor onto celery task: send_activation_email
 
     return UserReadSchema(
@@ -144,6 +150,12 @@ async def login_user(
     )
     db.add(db_token)
     await db.commit()
+
+    await sync_guest_cart_to_user(
+        db=db,
+        user_id=user.id,
+        guest_movie_ids=login_data.guest_cart_items,
+    )
 
     return LoginResponseSchema(
         access_token=access_token,
