@@ -20,3 +20,7 @@ class UserGroupNotExist(BaseAccountException):
 
 class IncorrectCredentials(BaseAccountException):
     pass
+
+
+class UserPermissionDenied(BaseAccountException):
+    pass

@@ -42,7 +42,9 @@ class Order(Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
 
-    user: Mapped["UserModel"] = relationship("UserModel", back_ref="orders")
+    user: Mapped["UserModel"] = relationship(
+        "UserModel", back_populates="orders"
+    )
     items: Mapped[List["OrderItem"]] = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )

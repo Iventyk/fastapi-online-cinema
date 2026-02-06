@@ -38,6 +38,7 @@ async def get_current_user(
         raise UserNotExist()
 
     return CurrentUser(
+        user_id=auth_user.id,
         email=auth_user.email,
         is_active=auth_user.is_active,
         permission=auth_user.group.name,

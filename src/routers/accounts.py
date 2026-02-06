@@ -15,6 +15,7 @@ from src.schemas import (
     LoginResponseSchema,
 )
 from src.securuty import JWTAuthManagerInterface
+from src.services import sync_guest_cart_to_user
 
 account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -30,11 +31,12 @@ async def create_account(
     user_data: UserCreateSchema,
 ) -> UserReadSchema:
     try:
-        return await create_new_user(
+        result = await create_new_user(
             db=db,
             jwt_manager=jwt_manager,
             user_data=user_data,
         )
+        return result
     except BaseAccountException as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
