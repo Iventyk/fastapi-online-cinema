@@ -23,7 +23,7 @@ from src.validators import validate_password
 from src.securuty import hash_password, verify_password
 
 if TYPE_CHECKING:
-    from src.databases.models import Cart, Order
+    from src.databases.models import Cart, Order, Payment
 
 
 settings = get_settings()
@@ -116,6 +116,12 @@ class UserModel(Base):
 
     profile: Mapped[Optional["UserProfileModel"]] = relationship(
         "UserProfileModel", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment",
+        back_populates="user",
+        cascade="all, delete-orphan",
     )
 
     def __repr__(self) -> str:
