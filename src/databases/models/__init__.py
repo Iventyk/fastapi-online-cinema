@@ -14,6 +14,7 @@ from src.databases.models.movies import (
     Certification,
     Movie,
 )
+from src.databases.models.payment import Payment, PaymentItem
 from src.databases.models.shopping_cart import (
     Cart,
     CartItem,
@@ -42,4 +43,6 @@ __all__ = [
     "StatusEnum",
     "Order",
     "OrderItem",
+    "Payment",
+    "PaymentItem",
 ]
