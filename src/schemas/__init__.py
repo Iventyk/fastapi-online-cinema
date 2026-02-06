@@ -1,4 +1,5 @@
 from src.schemas.accounts import (
+    CurrentUser,
     UserCreateSchema,
     UserReadSchema,
     UserLoginSchema,
@@ -6,6 +7,7 @@ from src.schemas.accounts import (
 )
 
 __all__ = [
+    "CurrentUser",
     "UserCreateSchema",
     "UserReadSchema",
     "UserLoginSchema",

@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from typing import Optional
 
+from pydantic import EmailStr
+
 
 class JWTAuthManagerInterface(ABC):
     """

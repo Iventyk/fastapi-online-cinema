@@ -89,6 +89,7 @@ async def get_user_by_email(
         select(UserModel)
         .where(UserModel.email == email)
         .options(selectinload(UserModel.group))
+        .options(selectinload(UserModel.profile))
     )
     user = result.scalar_one_or_none()
     return user

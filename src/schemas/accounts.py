@@ -4,6 +4,15 @@ from src.databases.models import UserGroupEnum
 from src.validators import validate_password
 
 
+class CurrentUser(BaseModel):
+    """Instance of authenticated user"""
+
+    email: str
+    permission: str
+    is_active: bool
+    profile_id: int | None
+
+
 class UserBaseSchema(BaseModel):
     email: EmailStr
 

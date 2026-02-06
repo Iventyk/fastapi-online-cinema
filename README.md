@@ -31,5 +31,27 @@ The server will run on http://127.0.0.1:8000 by default.
 Use --reload to enable auto-reload on code changes.
 
 
+# Core Dependencies
+```
+imports:
+
+from src.schemas import CurrentUser
+from src.securuty import JWTAuthManagerInterface, get_current_user
+from src.config import get_jwt_manager, get_settings, Settings
+from src.databases import get_db
+
+Realizations:
+
+Annotated[Settings, Depends(get_settings)] - retrieve settings object;
+
+db: Annotated[AsyncSession, Depends(get_db)] - retrieve db session;
+
+jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)] - retrieve jwt_manager
+
+current_user: Annotated[CurrentUser, Depends(get_current_user)] - retrieve current authorized user
+
+```
+
+
 
 
