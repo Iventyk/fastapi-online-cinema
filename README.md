@@ -31,5 +31,40 @@ The server will run on http://127.0.0.1:8000 by default.
 Use --reload to enable auto-reload on code changes.
 
 
+## Run with Docker
+
+### 1. Create `.env`
+
+Create `.env` from `.env.sample`.
+
+Windows (PowerShell):
+```Copy-Item .env.sample .env```
+
+Linux/macOS/WSL/Git Bash:
+```cp .env.sample .env```
+
+### 2. Build and start services
+
+```docker compose up -d --build```
+
+### 3. Apply migrations (run manually)
+
+Migrations are not executed automatically on `up`. Run them explicitly:
+
+```docker compose --profile migrate run --rm migrator```
+
+### Local URLs
+
+API docs:
+http://127.0.0.1:8000/docs
+
+MailHog UI:
+http://127.0.0.1:8025
+
+MinIO Console:
+http://127.0.0.1:9001
 
 
+### Stop services
+
+```docker compose down```
