@@ -3,7 +3,10 @@ from src.crud.accounts import (
     get_list_of_users,
     login_user,
     logout_user,
+    activate_user,
+    reactivate_user_token,
 )
+from src.crud.password import do_pswd_restore_request
 
 from src.crud.shopping_cart import (
     create_new_cart_item,
@@ -18,6 +21,9 @@ __all__ = [
     "get_list_of_users",
     "login_user",
     "logout_user",
+    "activate_user",
+    "reactivate_user_token",
+    "do_pswd_restore_request",
     "create_new_cart_item",
     "remove_cart_item",
     "get_cart",

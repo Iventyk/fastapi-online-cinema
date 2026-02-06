@@ -24,3 +24,15 @@ class IncorrectCredentials(BaseAccountException):
 
 class UserPermissionDenied(BaseAccountException):
     pass
+
+
+class UserAccountNotActivated(BaseAccountException):
+    pass
+
+
+class UserAlreadyActivated(BaseAccountException):
+    pass
+
+
+class UserNotActivated(BaseAccountException):
+    pass
