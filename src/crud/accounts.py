@@ -1,22 +1,44 @@
+from datetime import timedelta
 from typing import Annotated
 
 from fastapi.params import Depends
 from pydantic import EmailStr
+from pydantic_settings import BaseSettings
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.databases.models import UserModel, UserGroupModel, UserGroupEnum
-from src.exceptions import UserAlreadyExist, UserGroupNotExist
-from src.schemas import UserCreateSchema, UserReadSchema
+from src.databases.models import (
+    UserModel,
+    UserGroupModel,
+    UserGroupEnum,
+    ActivationTokenModel,
+    RefreshTokenModel,
+)
+from src.exceptions import (
+    UserAlreadyExist,
+    UserGroupNotExist,
+    UserNotExist,
+    IncorrectCredentials,
+)
+from src.schemas import (
+    UserCreateSchema,
+    UserReadSchema,
+    UserLoginSchema,
+    LoginResponseSchema,
+)
 from src.databases import get_db
+from src.config import get_jwt_manager, get_settings, Settings
+from src.securuty import JWTAuthManagerInterface
 
 
 async def create_new_user(
     db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
     user_data: UserCreateSchema,
 ) -> UserReadSchema:
     existing_user = await get_user_by_email(db=db, email=user_data.email)
+
     if existing_user:
         raise UserAlreadyExist(
             message="User with provided email already exists"
@@ -39,8 +61,18 @@ async def create_new_user(
     )
 
     db.add(user)
+    await db.flush()
+
+    token = jwt_manager.create_activation_token()
+    activation_token = ActivationTokenModel.create(
+        token=token,
+        user_id=user.id,
+    )
+    db.add(activation_token)
     await db.commit()
     await db.refresh(user)
+
+    # TODO Future refractor onto celery task: send_activation_email
 
     return UserReadSchema(
         id=user.id,
@@ -57,6 +89,7 @@ async def get_user_by_email(
         select(UserModel)
         .where(UserModel.email == email)
         .options(selectinload(UserModel.group))
+        .options(selectinload(UserModel.profile))
     )
     user = result.scalar_one_or_none()
     return user
@@ -75,3 +108,45 @@ async def get_list_of_users(
     )
     users = result.all()
     return [UserReadSchema.model_validate(user) for user in users]
+
+
+async def login_user(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    login_data: UserLoginSchema,
+) -> LoginResponseSchema:
+    email = login_data.email
+    user = await get_user_by_email(db=db, email=email)
+    if not user:
+        raise IncorrectCredentials(message="Incorrect credentials")
+
+    password = login_data.password
+    if not user.check_password(password):
+        raise IncorrectCredentials(message="Incorrect credentials")
+
+    token_data = {
+        "user_id": user.id,
+        "email": user.email,
+    }
+    access_token = jwt_manager.create_access_token(
+        data=token_data,
+        expires_delta=timedelta(minutes=settings.ACCESS_KEY_TIMEDELTA_MINUTES),
+    )
+    refresh_token = jwt_manager.create_refresh_token(
+        data=token_data,
+        expires_delta=timedelta(days=settings.REFRESH_TOKEN_DAYS),
+    )
+
+    db_token = RefreshTokenModel.create(
+        token=refresh_token,
+        user_id=user.id,
+    )
+    db.add(db_token)
+    await db.commit()
+
+    return LoginResponseSchema(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer",
+    )
