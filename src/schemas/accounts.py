@@ -41,6 +41,16 @@ class UserCreateSchema(UserBaseSchema):
             raise
 
 
+class ChangePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        validate_password(password=v)
+        return v
+
 class UserReadSchema(UserBaseSchema):
     model_config = ConfigDict(from_attributes=True)
 

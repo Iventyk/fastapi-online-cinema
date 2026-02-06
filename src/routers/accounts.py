@@ -12,7 +12,8 @@ from src.crud import (
     logout_user,
     do_pswd_restore_request,
     activate_user,
-    reactivate_user_token
+    reactivate_user_token,
+    change_password,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, Settings, get_settings
@@ -24,6 +25,7 @@ from src.exceptions import (
     UserNotExist,
     UserAccountNotActivated,
     UserNotActivated,
+    PasswordChangeError,
 )
 from src.schemas import (
     UserReadSchema,
@@ -32,6 +34,7 @@ from src.schemas import (
     LoginResponseSchema,
     CommonResponseSchema,
     CurrentUser,
+    ChangePasswordSchema,
 )
 from src.securuty import JWTAuthManagerInterface
 from src.services import sync_guest_cart_to_user
@@ -178,6 +181,30 @@ async def logout_account(
     except SQLAlchemyError as error:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error)
+        )
+
+
+@account_router.post(
+    "/change_password/",
+    status_code=status.HTTP_200_OK,
+    response_model=CommonResponseSchema
+)
+async def change_account_password(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+        new_password: ChangePasswordSchema,
+) -> CommonResponseSchema:
+    try:
+        result = await change_password(
+            db=db,
+            auth_user=auth_user,
+            new_password=new_password
+        )
+        return result
+    except PasswordChangeError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error)
         )
 
