@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import Depends
 from sqlalchemy import select, delete
@@ -16,6 +16,9 @@ from src.databases.models import (
     Cart,
     CartItem,
     Movie,
+    OrderItem,
+    Order,
+    StatusEnum,
 )
 from src.schemas import (
     CartReadSchema,
@@ -156,3 +159,33 @@ async def get_cart(
         await db.refresh(cart)
 
     return CartReadSchema.model_validate(cart)
+
+
+async def get_purchased_items(
+    db: AsyncSession,
+    user_id: int,
+    authenticated_user: CurrentUser,
+) -> List[MovieInCartSchema]:
+    await validate_user(db=db, user_id=user_id)
+    await validate_user_permission(
+        user_id=user_id, authenticated_user=authenticated_user
+    )
+
+    query = (
+        select(Movie)
+        .join(OrderItem, OrderItem.movie_id == Movie.id)
+        .join(Order, OrderItem.order_id == Order.id)
+        .where(
+            Order.user_id == user_id,
+            Order.status == StatusEnum.PAID,
+        )
+        .options(selectinload(Movie.genres))
+    )
+
+    result = await db.execute(query)
+
+    purchased_movies = result.scalars().all()
+
+    return [
+        MovieInCartSchema.model_validate(movie) for movie in purchased_movies
+    ]

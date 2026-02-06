@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, status, HTTPException
 from fastapi.params import Depends
@@ -10,6 +10,7 @@ from src.crud import (
     remove_cart_item,
     get_cart,
     clear_cart,
+    get_purchased_items,
 )
 from src.exceptions import (
     UserNotExist,
@@ -133,6 +134,32 @@ async def get_cart_items(
 ) -> CartReadSchema:
     try:
         return await get_cart(
+            db=db,
+            user_id=user_id,
+            authenticated_user=authenticated_user,
+        )
+    except (UserNotExist,) as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
+        )
+    except (UserPermissionDenied,) as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=str(error)
+        )
+
+
+@shopping_cart_router.get(
+    "/{user_id}/purchased/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[MovieInCartSchema],
+)
+async def get_purchased_cart(
+    user_id: int,
+    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> List[MovieInCartSchema]:
+    try:
+        return await get_purchased_items(
             db=db,
             user_id=user_id,
             authenticated_user=authenticated_user,
