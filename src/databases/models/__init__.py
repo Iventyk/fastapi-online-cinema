@@ -41,5 +41,5 @@ __all__ = [
     "CartItem",
     "StatusEnum",
     "Order",
-    "OrderItem"
+    "OrderItem",
 ]

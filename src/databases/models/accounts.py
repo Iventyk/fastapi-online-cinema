@@ -22,7 +22,6 @@ from src.databases.models.base import Base
 from src.validators import validate_password
 from src.securuty import hash_password, verify_password
 
-
 if TYPE_CHECKING:
     from src.databases.models import Cart
 
@@ -89,9 +88,7 @@ class UserModel(Base):
         "UserGroupModel", back_populates="users"
     )
     cart: Mapped["Cart"] = relationship(
-        "Cart",
-        back_populates="user",
-        uselist=False
+        "Cart", back_populates="user", uselist=False
     )
 
     activation_token: Mapped[Optional["ActivationTokenModel"]] = relationship(

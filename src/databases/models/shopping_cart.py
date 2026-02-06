@@ -15,7 +15,6 @@ from sqlalchemy.orm import (
 
 from src.databases.models.base import Base
 
-
 if TYPE_CHECKING:
     from src.databases.models import UserModel, Movie
 
@@ -25,15 +24,12 @@ class Cart(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        unique=True,
-        nullable=False
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
     )
 
     user: Mapped["UserModel"] = relationship(back_populates="cart")
     items: Mapped[List["CartItem"]] = relationship(
-        back_populates="cart",
-        cascade="all, delete-orphan"
+        back_populates="cart", cascade="all, delete-orphan"
     )
 
 
@@ -45,17 +41,13 @@ class CartItem(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     cart_id: Mapped[int] = mapped_column(
-        ForeignKey("carts.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("carts.id", ondelete="CASCADE"), nullable=False
     )
     movie_id: Mapped[int] = mapped_column(
-        ForeignKey("movies.id", ondelete="CASCADE"),
-        nullable=False
+        ForeignKey("movies.id", ondelete="CASCADE"), nullable=False
     )
     added_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False
+        DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
     cart: Mapped["Cart"] = relationship(back_populates="items")

@@ -1,11 +1,10 @@
-from typing import Annotated, cast
+from typing import Annotated
 
 from fastapi import APIRouter, status, HTTPException
 from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.crud import create_new_user, get_list_of_users, login_user
-from src.crud.accounts import get_user_by_email
 from src.databases import get_db
 from src.config import get_jwt_manager, Settings, get_settings
 from src.exceptions import BaseAccountException, IncorrectCredentials
@@ -37,13 +36,6 @@ async def create_account(
             jwt_manager=jwt_manager,
             user_data=user_data,
         )
-
-        await sync_guest_cart_to_user(
-            db=db,
-            user_id=result.id,
-            guest_movie_ids=user_data.guest_cart_items
-        )
-
         return result
     except BaseAccountException as error:
         raise HTTPException(
@@ -87,13 +79,6 @@ async def login_for_accounts(
             jwt_manager=jwt_manager,
             settings=settings,
             login_data=login_data,
-        )
-        query = await get_user_by_email(db=db, email=login_data.email)
-        user_id = query.id
-        await sync_guest_cart_to_user(
-            db=db,
-            user_id=cast(int, user_id),
-            guest_movie_ids=login_data.guest_cart_items
         )
         return result
     except IncorrectCredentials as error:

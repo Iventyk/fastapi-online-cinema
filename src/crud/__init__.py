@@ -3,7 +3,7 @@ from src.crud.shopping_cart import (
     create_new_cart_item,
     remove_cart_item,
     get_cart,
-    clear_cart
+    clear_cart,
 )
 
 __all__ = [

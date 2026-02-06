@@ -9,6 +9,7 @@ from src.validators import validate_password
 class CurrentUser(BaseModel):
     """Instance of authenticated user"""
 
+    user_id: int
     email: str
     permission: str
     is_active: bool

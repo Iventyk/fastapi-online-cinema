@@ -7,17 +7,15 @@ from src.databases.models import Cart, CartItem
 
 
 async def sync_guest_cart_to_user(
-        db: AsyncSession,
-        user_id: int,
-        guest_movie_ids: List[int]
+    db: AsyncSession, user_id: int, guest_movie_ids: List[int] | None
 ) -> None:
     if not guest_movie_ids:
         return
 
-    query = select(Cart).where(
-        Cart.user_id == user_id
-    ).options(
-        selectinload(Cart.items)
+    query = (
+        select(Cart)
+        .where(Cart.user_id == user_id)
+        .options(selectinload(Cart.items))
     )
     result = await db.execute(query)
     cart = result.scalar_one_or_none()
@@ -33,10 +31,7 @@ async def sync_guest_cart_to_user(
     movies_to_add = set(guest_movie_ids) - existing_movie_ids
 
     for movie_id in movies_to_add:
-        new_item = CartItem(
-            cart_id=cart.id,
-            movie_id=movie_id
-        )
+        new_item = CartItem(cart_id=cart.id, movie_id=movie_id)
         db.add(new_item)
 
     await db.commit()

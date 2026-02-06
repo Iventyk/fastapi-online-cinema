@@ -20,7 +20,6 @@ from sqlalchemy.orm import (
 
 from .base import Base
 
-
 if TYPE_CHECKING:
     from src.databases.models import CartItem
 
@@ -178,6 +177,5 @@ class Movie(Base):
         lazy="selectin",
     )
     cart_items: Mapped[List["CartItem"]] = relationship(
-        "CartItem",
-        back_populates="movie"
+        "CartItem", back_populates="movie"
     )

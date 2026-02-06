@@ -34,21 +34,18 @@ from src.securuty import get_current_user
 
 
 async def create_new_cart_item(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        user_id: int,
-        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
-        cart_item: CartItemCreateSchema
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: int,
+    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+    cart_item: CartItemCreateSchema,
 ) -> MovieInCartSchema:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
-        user_id=user_id,
-        authenticated_user=authenticated_user
+        user_id=user_id, authenticated_user=authenticated_user
     )
     movie = await validate_movie(db=db, movie_id=cart_item.movie_id)
     await validate_movie_purchase_status(
-        db=db,
-        user_id=user_id,
-        movie_id=cart_item.movie_id
+        db=db, user_id=user_id, movie_id=cart_item.movie_id
     )
 
     query = select(Cart).where(Cart.user_id == user_id)
@@ -60,10 +57,7 @@ async def create_new_cart_item(
         db.add(cart)
         await db.flush()
 
-    new_cart_item = CartItem(
-        cart_id=cart.id,
-        movie_id=cart_item.movie_id
-    )
+    new_cart_item = CartItem(cart_id=cart.id, movie_id=cart_item.movie_id)
 
     db.add(new_cart_item)
 
@@ -77,15 +71,14 @@ async def create_new_cart_item(
 
 
 async def remove_cart_item(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        user_id: int,
-        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
-        cart_item: CartItemRemoveSchema
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: int,
+    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+    cart_item: CartItemRemoveSchema,
 ) -> None:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
-        user_id=user_id,
-        authenticated_user=authenticated_user
+        user_id=user_id, authenticated_user=authenticated_user
     )
 
     query_cart = select(Cart).where(Cart.user_id == user_id)
@@ -96,8 +89,7 @@ async def remove_cart_item(
         raise CartItemDoesNotExist("Cart not found")
 
     query_item = select(CartItem).where(
-        CartItem.id == cart_item.cart_item_id,
-        CartItem.cart_id == cart.id
+        CartItem.id == cart_item.cart_item_id, CartItem.cart_id == cart.id
     )
     result_item = await db.execute(query_item)
     item = result_item.scalar_one_or_none()
@@ -112,14 +104,13 @@ async def remove_cart_item(
 
 
 async def clear_cart(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        user_id: int,
-        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: int,
+    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> None:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
-        user_id=user_id,
-        authenticated_user=authenticated_user
+        user_id=user_id, authenticated_user=authenticated_user
     )
 
     query_cart = select(Cart).where(Cart.user_id == user_id)
@@ -136,14 +127,13 @@ async def clear_cart(
 
 
 async def get_cart(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        user_id: int,
-        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: int,
+    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CartReadSchema:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
-        user_id=user_id,
-        authenticated_user=authenticated_user
+        user_id=user_id, authenticated_user=authenticated_user
     )
 
     query = (
@@ -151,9 +141,7 @@ async def get_cart(
         .where(Cart.user_id == user_id)
         .options(
             selectinload(Cart.items).options(
-                joinedload(CartItem.movie).options(
-                    selectinload(Movie.genres)
-                )
+                joinedload(CartItem.movie).options(selectinload(Movie.genres))
             )
         )
     )
