@@ -1,0 +1,20 @@
+# Python caches / compiled artifacts
+__pycache__/
+*.py[cod]
+
+# Test / lint / typecheck caches & reports
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# IDE / VCS
+.idea/
+.git/
+
+# Local environment
+.env
+
+# Local dev DB file (SQLite)
+proj.db
+*.db

@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+from src.config.settings import Settings
 
 from src.config import get_settings
 from src.databases.models import (
@@ -29,6 +32,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 config.set_main_option("sqlalchemy.url", settings.DEV_DATABASE_URL)
+
 
 # add your model's MetaData object here
 # for 'autogenerate' support
