@@ -4,6 +4,15 @@ from src.databases.models import UserGroupEnum
 from src.validators import validate_password
 
 
+class CurrentUser(BaseModel):
+    """Instance of authenticated user"""
+
+    email: str
+    permission: str
+    is_active: bool
+    profile_id: int | None
+
+
 class UserBaseSchema(BaseModel):
     email: EmailStr
 
@@ -35,8 +44,12 @@ class UserReadSchema(UserBaseSchema):
     is_active: bool
 
 
-class UserGroupSchema(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class UserLoginSchema(BaseModel):
+    email: EmailStr
+    password: str
 
-    id: int
-    name: str
+
+class LoginResponseSchema(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
