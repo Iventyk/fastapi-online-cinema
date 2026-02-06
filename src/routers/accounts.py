@@ -2,20 +2,34 @@ from typing import Annotated
 
 from fastapi import APIRouter, status, HTTPException
 from fastapi.params import Depends
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.crud import create_new_user, get_list_of_users, login_user
+from src.crud import (
+    create_new_user,
+    get_list_of_users,
+    login_user,
+    logout_user
+)
 from src.databases import get_db
 from src.config import get_jwt_manager, Settings, get_settings
-from src.exceptions import BaseAccountException, IncorrectCredentials
+from src.exceptions import (
+    BaseAccountException,
+    IncorrectCredentials,
+    TokenExpiredError,
+    InvalidTokenError,
+    UserNotExist)
 from src.schemas import (
     UserReadSchema,
     UserCreateSchema,
     UserLoginSchema,
     LoginResponseSchema,
+    CommonResponseSchema,
+    CurrentUser,
 )
 from src.securuty import JWTAuthManagerInterface
 from src.services import sync_guest_cart_to_user
+from src.securuty.utils import get_current_user
 
 account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
@@ -26,17 +40,17 @@ account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
     response_model=UserReadSchema,
 )
 async def create_account(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
-    user_data: UserCreateSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+        user_data: UserCreateSchema,
 ) -> UserReadSchema:
     try:
-        result = await create_new_user(
+        return await create_new_user(
             db=db,
             jwt_manager=jwt_manager,
             user_data=user_data,
         )
-        return result
     except BaseAccountException as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
@@ -49,7 +63,7 @@ async def create_account(
     response_model=list[UserReadSchema],
 )
 async def get_accounts(
-    db: Annotated[AsyncSession, Depends(get_db)],
+        db: Annotated[AsyncSession, Depends(get_db)],
 ) -> list[UserReadSchema]:
     try:
         result = await get_list_of_users(
@@ -68,10 +82,11 @@ async def get_accounts(
     response_model=LoginResponseSchema,
 )
 async def login_for_accounts(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    login_data: UserLoginSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+        settings: Annotated[Settings, Depends(get_settings)],
+        login_data: UserLoginSchema,
 ) -> LoginResponseSchema:
     try:
         result = await login_user(
@@ -84,4 +99,28 @@ async def login_for_accounts(
     except IncorrectCredentials as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
+        )
+
+
+@account_router.get(
+    "/logout/",
+    status_code=status.HTTP_200_OK,
+    response_model=CommonResponseSchema
+)
+async def logout_account(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)]
+) -> CommonResponseSchema:
+    try:
+        result = await logout_user(db=db, auth_user=auth_user)
+        return result
+    except (TokenExpiredError, InvalidTokenError, UserNotExist):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect provided JWT Token or it expired"
+        )
+    except SQLAlchemyError as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(error)
         )

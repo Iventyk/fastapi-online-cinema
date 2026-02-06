@@ -4,6 +4,7 @@ from src.schemas.accounts import (
     UserReadSchema,
     UserLoginSchema,
     LoginResponseSchema,
+    CommonResponseSchema,
 )
 
 from src.schemas.movies import (
@@ -32,6 +33,7 @@ __all__ = [
     "UserReadSchema",
     "UserLoginSchema",
     "LoginResponseSchema",
+    "CommonResponseSchema",
     "MovieCreate",
     "MovieUpdate",
     "MovieListItem",

@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi.params import Depends
 from pydantic import EmailStr
 from pydantic_settings import BaseSettings
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,24 +19,26 @@ from src.exceptions import (
     UserAlreadyExist,
     UserGroupNotExist,
     UserNotExist,
-    IncorrectCredentials,
+    IncorrectCredentials, TokenExpiredError, InvalidTokenError,
 )
 from src.schemas import (
     UserCreateSchema,
     UserReadSchema,
     UserLoginSchema,
-    LoginResponseSchema,
+    LoginResponseSchema, CurrentUser, CommonResponseSchema,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
 from src.securuty import JWTAuthManagerInterface
+from src.securuty.utils import get_current_user
 from src.services import sync_guest_cart_to_user
 
 
 async def create_new_user(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
-    user_data: UserCreateSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+        user_data: UserCreateSchema,
 ) -> UserReadSchema:
     existing_user = await get_user_by_email(db=db, email=user_data.email)
 
@@ -88,8 +90,8 @@ async def create_new_user(
 
 
 async def get_user_by_email(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    email: EmailStr,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        email: EmailStr,
 ) -> UserModel | None:
     result = await db.execute(
         select(UserModel)
@@ -102,9 +104,9 @@ async def get_user_by_email(
 
 
 async def get_list_of_users(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    skip: int = 0,
-    limit: int = 25,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        skip: int = 0,
+        limit: int = 25,
 ) -> list[UserReadSchema]:
     result = await db.scalars(
         select(UserModel)
@@ -117,10 +119,11 @@ async def get_list_of_users(
 
 
 async def login_user(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
-    settings: Annotated[Settings, Depends(get_settings)],
-    login_data: UserLoginSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+        settings: Annotated[Settings, Depends(get_settings)],
+        login_data: UserLoginSchema,
 ) -> LoginResponseSchema:
     email = login_data.email
     user = await get_user_by_email(db=db, email=email)
@@ -162,3 +165,21 @@ async def login_user(
         refresh_token=refresh_token,
         token_type="bearer",
     )
+
+
+async def logout_user(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CommonResponseSchema:
+    stmt = (
+        delete(RefreshTokenModel)
+        .where(RefreshTokenModel.user_id == auth_user.user_id)
+    )
+
+    await db.execute(stmt)
+    await db.commit()
+
+    return CommonResponseSchema(
+        message="Successfully logged out from all devices",
+    )
+
