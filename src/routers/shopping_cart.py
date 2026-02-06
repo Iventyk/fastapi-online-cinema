@@ -27,7 +27,7 @@ from src.schemas import (
     CartReadSchema,
     CurrentUser,
 )
-from src.securuty import get_current_user
+from src.securuty.utils import get_current_user
 
 shopping_cart_router = APIRouter(prefix="/cart", tags=["Carts"])
 

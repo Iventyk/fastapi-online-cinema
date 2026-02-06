@@ -30,7 +30,7 @@ from src.validators import (
     validate_movie,
     validate_movie_purchase_status,
 )
-from src.securuty import get_current_user
+from src.securuty.utils import get_current_user
 
 
 async def create_new_cart_item(

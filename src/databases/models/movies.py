@@ -128,7 +128,7 @@ class Movie(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    uuid: Mapped[uuid.UUID] = mapped_column(
+    uuid: Mapped[str] = mapped_column(
         default=uuid.uuid4,
         unique=True,
         nullable=False,
