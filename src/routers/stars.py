@@ -7,12 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import Star, Movie
 from src.schemas.stars import StarCreate, StarRead
+from src.schemas.movies import MovieListItem
 
 router = APIRouter(prefix="/stars", tags=["Stars"])
 
 
 @router.get("", response_model=List[StarRead])
-async def get_stars(db: AsyncSession = Depends(get_db)):
+async def get_stars(db: AsyncSession = Depends(get_db)) -> List[StarRead]:
     stmt = (
         select(
             Star.id,
@@ -25,14 +26,22 @@ async def get_stars(db: AsyncSession = Depends(get_db)):
     )
 
     result = await db.execute(stmt)
-    return result.mappings().all()
+    rows = result.mappings().all()
+    return [
+        StarRead(
+            id=row["id"],
+            name=row["name"],
+            movies_count=row["movies_count"],
+        )
+        for row in rows
+    ]
 
 
 @router.get("/{star_id}/movies")
 async def get_star_movies(
     star_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> List[MovieListItem]:
     result = await db.execute(select(Star).where(Star.id == star_id))
     star = result.scalar_one_or_none()
 
@@ -42,7 +51,18 @@ async def get_star_movies(
             detail="Star not found",
         )
 
-    return star.movies
+    return [
+        MovieListItem(
+            id=m.id,
+            uuid=m.uuid,
+            name=m.name,
+            year=m.year,
+            time=m.time,
+            imdb=m.imdb,
+            price=m.price,
+        )
+        for m in star.movies
+    ]
 
 
 @router.post(
@@ -53,7 +73,7 @@ async def get_star_movies(
 async def create_star(
     data: StarCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> StarRead:
     star = Star(name=data.name)
     db.add(star)
     await db.commit()
@@ -73,7 +93,7 @@ async def create_star(
 async def delete_star(
     star_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> None:
     result = await db.execute(select(Star).where(Star.id == star_id))
     star = result.scalar_one_or_none()
 

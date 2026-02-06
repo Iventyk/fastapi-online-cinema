@@ -7,12 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import Director, Movie
 from src.schemas.directors import DirectorCreate, DirectorRead
+from src.schemas.movies import MovieListItem
 
 router = APIRouter(prefix="/directors", tags=["Directors"])
 
 
 @router.get("", response_model=List[DirectorRead])
-async def get_directors(db: AsyncSession = Depends(get_db)):
+async def get_directors(
+    db: AsyncSession = Depends(get_db),
+) -> List[DirectorRead]:
     stmt = (
         select(
             Director.id,
@@ -25,14 +28,22 @@ async def get_directors(db: AsyncSession = Depends(get_db)):
     )
 
     result = await db.execute(stmt)
-    return result.mappings().all()
+    rows = result.mappings().all()
+    return [
+        DirectorRead(
+            id=row["id"],
+            name=row["name"],
+            movies_count=row["movies_count"],
+        )
+        for row in rows
+    ]
 
 
 @router.get("/{director_id}/movies")
 async def get_director_movies(
     director_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> List[MovieListItem]:
     result = await db.execute(
         select(Director).where(Director.id == director_id)
     )
@@ -44,7 +55,18 @@ async def get_director_movies(
             detail="Director not found",
         )
 
-    return director.movies
+    return [
+        MovieListItem(
+            id=m.id,
+            uuid=m.uuid,
+            name=m.name,
+            year=m.year,
+            time=m.time,
+            imdb=m.imdb,
+            price=m.price,
+        )
+        for m in director.movies
+    ]
 
 
 @router.post(
@@ -55,7 +77,7 @@ async def get_director_movies(
 async def create_director(
     data: DirectorCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> DirectorRead:
     director = Director(name=data.name)
     db.add(director)
     await db.commit()
@@ -75,7 +97,7 @@ async def create_director(
 async def delete_director(
     director_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> None:
     result = await db.execute(
         select(Director).where(Director.id == director_id)
     )

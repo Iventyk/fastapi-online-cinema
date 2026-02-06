@@ -39,7 +39,7 @@ async def get_movies(
     sort_by: Optional[str] = Query(None, pattern="^(price|year|imdb)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
-):
+) -> List[MovieListItem]:
     stmt = select(Movie).distinct()
 
     if search:
@@ -90,7 +90,20 @@ async def get_movies(
     stmt = stmt.offset(offset).limit(per_page)
 
     result = await db.execute(stmt)
-    return result.scalars().all()
+    movies = result.scalars().all()
+
+    return [
+        MovieListItem(
+            id=m.id,
+            uuid=m.uuid,
+            name=m.name,
+            year=m.year,
+            time=m.time,
+            imdb=m.imdb,
+            price=m.price,
+        )
+        for m in movies
+    ]
 
 
 @router.get(
@@ -100,7 +113,7 @@ async def get_movies(
 async def get_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> MovieRead:
     result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
@@ -110,7 +123,7 @@ async def get_movie(
             detail="Movie not found",
         )
 
-    return movie
+    return MovieRead.model_validate(movie)
 
 
 @router.post(
@@ -121,7 +134,7 @@ async def get_movie(
 async def create_movie(
     data: MovieCreate,
     db: AsyncSession = Depends(get_db),
-):
+) -> MovieRead:
     movie = Movie(
         name=data.name,
         year=data.year,
@@ -139,25 +152,25 @@ async def create_movie(
         genres = await db.execute(
             select(Genre).where(Genre.id.in_(data.genre_ids))
         )
-        movie.genres = genres.scalars().all()
+        movie.genres = list(genres.scalars().all())
 
     if data.star_ids:
         stars = await db.execute(
             select(Star).where(Star.id.in_(data.star_ids))
         )
-        movie.stars = stars.scalars().all()
+        movie.stars = list(stars.scalars().all())
 
     if data.director_ids:
         directors = await db.execute(
             select(Director).where(Director.id.in_(data.director_ids))
         )
-        movie.directors = directors.scalars().all()
+        movie.directors = list(directors.scalars().all())
 
     db.add(movie)
     await db.commit()
     await db.refresh(movie)
 
-    return movie
+    return MovieRead.model_validate(movie)
 
 
 @router.put(
@@ -168,7 +181,7 @@ async def update_movie(
     movie_id: int,
     data: MovieUpdate,
     db: AsyncSession = Depends(get_db),
-):
+) -> MovieRead:
     result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
@@ -187,24 +200,24 @@ async def update_movie(
         genres = await db.execute(
             select(Genre).where(Genre.id.in_(data.genre_ids))
         )
-        movie.genres = genres.scalars().all()
+        movie.genres = list(genres.scalars().all())
 
     if data.star_ids is not None:
         stars = await db.execute(
             select(Star).where(Star.id.in_(data.star_ids))
         )
-        movie.stars = stars.scalars().all()
+        movie.stars = list(stars.scalars().all())
 
     if data.director_ids is not None:
         directors = await db.execute(
             select(Director).where(Director.id.in_(data.director_ids))
         )
-        movie.directors = directors.scalars().all()
+        movie.directors = list(directors.scalars().all())
 
     await db.commit()
     await db.refresh(movie)
 
-    return movie
+    return MovieRead.model_validate(movie)
 
 
 @router.delete(
@@ -214,7 +227,7 @@ async def update_movie(
 async def delete_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> None:
     result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
