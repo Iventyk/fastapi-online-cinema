@@ -33,9 +33,7 @@ async def get_genre_movies(
     genre_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Genre).where(Genre.id == genre_id)
-    )
+    result = await db.execute(select(Genre).where(Genre.id == genre_id))
     genre = result.scalar_one_or_none()
 
     if not genre:
@@ -76,9 +74,7 @@ async def delete_genre(
     genre_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Genre).where(Genre.id == genre_id)
-    )
+    result = await db.execute(select(Genre).where(Genre.id == genre_id))
     genre = result.scalar_one_or_none()
 
     if not genre:

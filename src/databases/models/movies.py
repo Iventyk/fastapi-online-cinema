@@ -20,32 +20,47 @@ from sqlalchemy.orm import (
 
 from .base import Base
 
-
 movie_genres = Table(
     "movie_genres",
     Base.metadata,
-    Column("movie_id",
-           ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True),
-    Column("genre_id",
-           ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "genre_id",
+        ForeignKey("genres.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 movie_stars = Table(
     "movie_stars",
     Base.metadata,
-    Column("movie_id",
-           ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True),
-    Column("star_id",
-           ForeignKey("stars.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "star_id", ForeignKey("stars.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 movie_directors = Table(
     "movie_directors",
     Base.metadata,
-    Column("movie_id",
-           ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True),
-    Column("director_id",
-           ForeignKey("directors.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "movie_id",
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "director_id",
+        ForeignKey("directors.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
 )
 
 
@@ -103,10 +118,9 @@ class Certification(Base):
 class Movie(Base):
     __tablename__ = "movies"
     __table_args__ = (
-        UniqueConstraint("name",
-                         "year",
-                         "time",
-                         name="uq_movie_name_year_time"),
+        UniqueConstraint(
+            "name", "year", "time", name="uq_movie_name_year_time"
+        ),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -127,8 +141,9 @@ class Movie(Base):
     gross: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    price: Mapped[Optional[float]] = (
-        mapped_column(DECIMAL(10, 2), nullable=True))
+    price: Mapped[Optional[float]] = mapped_column(
+        DECIMAL(10, 2), nullable=True
+    )
 
     certification_id: Mapped[int] = mapped_column(
         ForeignKey("certifications.id", ondelete="RESTRICT"),

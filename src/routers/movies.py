@@ -20,7 +20,6 @@ from src.schemas.movies import (
     MovieListItem,
 )
 
-
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
 
@@ -28,9 +27,7 @@ router = APIRouter(prefix="/movies", tags=["Movies"])
 async def get_movies(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
-
     search: Optional[str] = None,
-
     year_from: Optional[int] = None,
     year_to: Optional[int] = None,
     imdb_from: Optional[float] = None,
@@ -39,18 +36,15 @@ async def get_movies(
     price_to: Optional[float] = None,
     genre_id: Optional[int] = None,
     certification_id: Optional[int] = None,
-
     sort_by: Optional[str] = Query(None, pattern="^(price|year|imdb)$"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
-
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Movie).distinct()
 
     if search:
         stmt = (
-            stmt
-            .outerjoin(Movie.directors)
+            stmt.outerjoin(Movie.directors)
             .outerjoin(Movie.stars)
             .where(
                 or_(
@@ -107,9 +101,7 @@ async def get_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Movie).where(Movie.id == movie_id)
-    )
+    result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
     if not movie:
@@ -177,9 +169,7 @@ async def update_movie(
     data: MovieUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Movie).where(Movie.id == movie_id)
-    )
+    result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
     if not movie:
@@ -225,9 +215,7 @@ async def delete_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Movie).where(Movie.id == movie_id)
-    )
+    result = await db.execute(select(Movie).where(Movie.id == movie_id))
     movie = result.scalar_one_or_none()
 
     if not movie:

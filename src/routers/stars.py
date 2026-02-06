@@ -33,9 +33,7 @@ async def get_star_movies(
     star_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Star).where(Star.id == star_id)
-    )
+    result = await db.execute(select(Star).where(Star.id == star_id))
     star = result.scalar_one_or_none()
 
     if not star:
@@ -76,9 +74,7 @@ async def delete_star(
     star_id: int,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Star).where(Star.id == star_id)
-    )
+    result = await db.execute(select(Star).where(Star.id == star_id))
     star = result.scalar_one_or_none()
 
     if not star:
