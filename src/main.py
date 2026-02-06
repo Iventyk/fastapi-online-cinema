@@ -6,13 +6,17 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
-from src.databases.dev_engine import AsyncSessionLocal
+from src.databases import Base
+from src.databases.dev_engine import AsyncSessionLocal, engine
 from src.databases.populate import seed_groups
 from src.routers import api_v1_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     async with AsyncSessionLocal() as session:
         await seed_groups(session)
     yield
