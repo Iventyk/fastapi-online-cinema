@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.databases.models.base import Base
 from src.databases.models.accounts import UserModel
 from src.databases.models.movies import Movie
-from src.databases.models.payment import Payment,PaymentItem
+from src.databases.models.payment import Payment, PaymentItem
 
 
 class StatusEnum(StrEnum):
