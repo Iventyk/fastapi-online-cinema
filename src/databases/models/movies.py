@@ -1,4 +1,4 @@
-import uuid
+from uuid import UUID, uuid4
 from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import (
@@ -128,8 +128,8 @@ class Movie(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    uuid: Mapped[str] = mapped_column(
-        default=uuid.uuid4,
+    uuid: Mapped[UUID] = mapped_column(
+        default=uuid4,
         unique=True,
         nullable=False,
     )

@@ -91,9 +91,7 @@ class UserModel(Base):
         "Cart", back_populates="user", uselist=False
     )
     orders: Mapped[List["Order"]] = relationship(
-        "Order",
-        back_populates="user",
-        cascade="all, delete-orphan"
+        "Order", back_populates="user", cascade="all, delete-orphan"
     )
 
     activation_token: Mapped[Optional["ActivationTokenModel"]] = relationship(

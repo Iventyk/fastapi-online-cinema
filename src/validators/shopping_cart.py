@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 
 
 async def validate_user(
-        db: AsyncSession,
-        user_id: int,
+    db: AsyncSession,
+    user_id: int,
 ) -> None:
     user = await db.get(UserModel, user_id)
     if not user:
@@ -35,13 +35,13 @@ async def validate_user(
 
 
 async def validate_user_permission(
-        user_id: int,
-        authenticated_user: "CurrentUser",
+    user_id: int,
+    authenticated_user: "CurrentUser",
 ) -> None:
     groups = UserGroupEnum
     has_permission = (
-            authenticated_user.permission == groups.MODERATOR.name
-            or authenticated_user.permission == groups.ADMIN.name
+        authenticated_user.permission == groups.MODERATOR.name
+        or authenticated_user.permission == groups.ADMIN.name
     )  # noqa
     if authenticated_user.user_id != user_id and not has_permission:
         raise UserPermissionDenied("Not enough permission")
@@ -62,7 +62,7 @@ async def validate_movie(db: AsyncSession, movie_id: int) -> "Movie":
 
 
 async def validate_movie_purchase_status(
-        db: AsyncSession, user_id: int, movie_id: int
+    db: AsyncSession, user_id: int, movie_id: int
 ) -> None:
     query = (
         select(OrderItem)
