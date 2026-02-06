@@ -24,7 +24,7 @@ from src.securuty import hash_password, verify_password
 from src.databases.models.favorites import Favorite
 
 if TYPE_CHECKING:
-    from src.databases.models import Cart, Order
+    from src.databases.models import Cart, Order, Payment
 
 
 settings = get_settings()
@@ -121,6 +121,9 @@ class UserModel(Base):
 
     favorites: Mapped[List["Favorite"]] = relationship(
         "Favorite",
+    )
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment",
         back_populates="user",
         cascade="all, delete-orphan",
     )

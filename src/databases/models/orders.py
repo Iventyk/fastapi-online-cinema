@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, relationship, mapped_column
 from src.databases.models.base import Base
 from src.databases.models.accounts import UserModel
 from src.databases.models.movies import Movie
+from src.databases.models.payment import Payment, PaymentItem
 
 
 class StatusEnum(StrEnum):
@@ -48,6 +49,11 @@ class Order(Base):
     items: Mapped[List["OrderItem"]] = relationship(
         "OrderItem", back_populates="order", cascade="all, delete-orphan"
     )
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment",
+        back_populates="order",
+        cascade="all, delete-orphan",
+    )
 
 
 class OrderItem(Base):
@@ -67,3 +73,8 @@ class OrderItem(Base):
 
     order: Mapped["Order"] = relationship("Order", back_populates="items")
     movie: Mapped["Movie"] = relationship("Movie")
+    payment_items: Mapped[list["PaymentItem"]] = relationship(
+        "PaymentItem",
+        back_populates="order_item",
+        cascade="all, delete-orphan",
+    )

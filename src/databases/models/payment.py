@@ -14,8 +14,9 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 
+from src.databases.models.base import Base
+
 if TYPE_CHECKING:
-    from src.databases.models.base import Base
     from src.databases.models.orders import Order
     from src.databases.models.accounts import UserModel
     from src.databases.models.orders import OrderItem
