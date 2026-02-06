@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from sqlalchemy import select, or_, asc, desc
+from sqlalchemy import or_, asc, desc
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -97,7 +97,6 @@ async def get_movies(
 
     result = await db.execute(stmt)
     return result.scalars().all()
-
 
 
 @router.get(
