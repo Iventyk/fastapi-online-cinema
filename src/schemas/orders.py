@@ -20,7 +20,7 @@ class OrderCreateSchema(OrderBaseSchema):
 
     @field_validator("movie_ids")
     @classmethod
-    def check_not_empty(cls, v):
+    def check_not_empty(cls, v: int) -> int | None:
         if not v:
             raise ValueError("Order must contain at least one movie ID")
         return v
