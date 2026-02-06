@@ -12,3 +12,7 @@ class CartItemAlreadyExist(BaseShoppingCartException):
 
 class CartItemDoesNotExist(BaseShoppingCartException):
     pass
+
+
+class CartItemsDoesNotExist(BaseShoppingCartException):
+    pass
