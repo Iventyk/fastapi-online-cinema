@@ -1,3 +1,5 @@
+from typing import Optional, List
+
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 from src.databases.models import UserGroupEnum
@@ -20,6 +22,7 @@ class UserBaseSchema(BaseModel):
 class UserCreateSchema(UserBaseSchema):
     group: UserGroupEnum | None = None
     password: str
+    guest_cart_items: Optional[List[int]] = None
 
     @field_validator("email")
     @classmethod
@@ -47,6 +50,7 @@ class UserReadSchema(UserBaseSchema):
 class UserLoginSchema(BaseModel):
     email: EmailStr
     password: str
+    guest_cart_items: Optional[List[int]] = None
 
 
 class LoginResponseSchema(BaseModel):

@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 settings = get_settings()
 
+
 class UserGroupEnum(StrEnum):
     USER = auto()
     MODERATOR = auto()
