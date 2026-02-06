@@ -19,6 +19,14 @@ from src.databases.models import (
     RefreshTokenModel,
     PasswordResetTokenModel,
 )  # noqa
+from src.databases.models.movies import (
+    Movie,
+    Genre,
+    Star,
+    Director,
+    Certification,
+)
+from src.databases.models.favorites import Favorite
 from src.databases import Base
 
 settings = get_settings()

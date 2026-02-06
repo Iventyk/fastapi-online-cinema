@@ -19,6 +19,7 @@ from sqlalchemy.orm import (
 )
 
 from .base import Base
+from src.databases.models.favorites import Favorite
 
 movie_genres = Table(
     "movie_genres",
@@ -171,4 +172,10 @@ class Movie(Base):
         secondary=movie_directors,
         back_populates="movies",
         lazy="selectin",
+    )
+
+    favorited_by: Mapped[List["Favorite"]] = relationship(
+        "Favorite",
+        back_populates="movie",
+        cascade="all, delete-orphan",
     )
