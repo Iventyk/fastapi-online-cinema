@@ -12,7 +12,7 @@ from src.schemas.movies import (
     MovieListItem,
     MovieRead,
     GenreSchema,
-    StartSchema,
+    StarSchema,
     DirectorSchema,
     CertificationSchema,
 )
@@ -34,7 +34,7 @@ __all__ = [
     "MovieListItem",
     "MovieRead",
     "GenreSchema",
-    "StartSchema",
+    "StarSchema",
     "DirectorSchema",
     "CertificationSchema",
     "CartReadSchema",

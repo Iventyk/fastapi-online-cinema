@@ -18,6 +18,11 @@ from src.databases.models.shopping_cart import (
     Cart,
     CartItem,
 )
+from src.databases.models.orders import (
+    StatusEnum,
+    Order,
+    OrderItem,
+)
 
 __all__ = [
     "UserGroupEnum",
@@ -34,4 +39,7 @@ __all__ = [
     "Movie",
     "Cart",
     "CartItem",
+    "StatusEnum",
+    "Order",
+    "OrderItem"
 ]
