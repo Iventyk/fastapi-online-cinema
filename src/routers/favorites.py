@@ -71,4 +71,9 @@ async def get_favorites(
     )
 
     result = await db.execute(stmt)
-    return result.scalars().all()
+    movies = result.scalars().all()
+
+    return [
+        MovieListItem.model_validate(movie)
+        for movie in movies
+    ]
