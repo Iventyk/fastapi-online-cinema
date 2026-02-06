@@ -13,6 +13,7 @@ from src.databases.models.accounts import UserModel
 
 router = APIRouter(prefix="/favorites", tags=["Favorites"])
 
+
 @router.post("/{movie_id}", status_code=status.HTTP_201_CREATED)
 async def add_to_favorites(
     movie_id: int,
@@ -64,16 +65,9 @@ async def get_favorites(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
 ) -> List[MovieListItem]:
-    stmt = (
-        select(Movie)
-        .join(Favorite)
-        .where(Favorite.user_id == user.id)
-    )
+    stmt = select(Movie).join(Favorite).where(Favorite.user_id == user.id)
 
     result = await db.execute(stmt)
     movies = result.scalars().all()
 
-    return [
-        MovieListItem.model_validate(movie)
-        for movie in movies
-    ]
+    return [MovieListItem.model_validate(movie) for movie in movies]
