@@ -1,0 +1,170 @@
+from typing import Annotated
+
+from fastapi import Depends
+from sqlalchemy import select, delete
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.databases import get_db
+from src.exceptions import (
+    CartItemAlreadyExist,
+    CartItemDoesNotExist,
+    CartItemsDoesNotExist,
+)
+from src.databases.models import (
+    Cart,
+    CartItem,
+    Movie,
+)
+from src.schemas import (
+    CartReadSchema,
+    CartItemRemoveSchema,
+    CartItemCreateSchema,
+    MovieInCartSchema,
+    CurrentUser,
+)
+from src.validators import (
+    validate_user,
+    validate_user_permission,
+    validate_movie,
+    validate_movie_purchase_status,
+)
+from src.securuty import get_current_user
+
+
+async def create_new_cart_item(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        cart_item: CartItemCreateSchema
+) -> MovieInCartSchema:
+    await validate_user(db=db, user_id=user_id)
+    await validate_user_permission(
+        user_id=user_id,
+        authenticated_user=authenticated_user
+    )
+    movie = await validate_movie(db=db, movie_id=cart_item.movie_id)
+    await validate_movie_purchase_status(
+        db=db,
+        user_id=user_id,
+        movie_id=cart_item.movie_id
+    )
+
+    query = select(Cart).where(Cart.user_id == user_id)
+    result = await db.execute(query)
+    cart = result.scalar_one_or_none()
+
+    if not cart:
+        cart = Cart(user_id=user_id)
+        db.add(cart)
+        await db.flush()
+
+    new_cart_item = CartItem(
+        cart_id=cart.id,
+        movie_id=cart_item.movie_id
+    )
+
+    db.add(new_cart_item)
+
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise CartItemAlreadyExist("This movie is already in the cart")
+
+    return MovieInCartSchema.model_validate(movie)
+
+
+async def remove_cart_item(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        cart_item: CartItemRemoveSchema
+) -> None:
+    await validate_user(db=db, user_id=user_id)
+    await validate_user_permission(
+        user_id=user_id,
+        authenticated_user=authenticated_user
+    )
+
+    query_cart = select(Cart).where(Cart.user_id == user_id)
+    result_cart = await db.execute(query_cart)
+    cart = result_cart.scalar_one_or_none()
+
+    if not cart:
+        raise CartItemDoesNotExist("Cart not found")
+
+    query_item = select(CartItem).where(
+        CartItem.id == cart_item.cart_item_id,
+        CartItem.cart_id == cart.id
+    )
+    result_item = await db.execute(query_item)
+    item = result_item.scalar_one_or_none()
+
+    if not item:
+        raise CartItemDoesNotExist(
+            "Cart item does not exist in this user's cart"
+        )
+
+    await db.delete(item)
+    await db.commit()
+
+
+async def clear_cart(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> None:
+    await validate_user(db=db, user_id=user_id)
+    await validate_user_permission(
+        user_id=user_id,
+        authenticated_user=authenticated_user
+    )
+
+    query_cart = select(Cart).where(Cart.user_id == user_id)
+    result_cart = await db.execute(query_cart)
+    cart = result_cart.scalar_one_or_none()
+
+    if not cart:
+        raise CartItemsDoesNotExist("Cart already empty")
+
+    query_delete = delete(CartItem).where(CartItem.cart_id == cart.id)
+
+    await db.execute(query_delete)
+    await db.commit()
+
+
+async def get_cart(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CartReadSchema:
+    await validate_user(db=db, user_id=user_id)
+    await validate_user_permission(
+        user_id=user_id,
+        authenticated_user=authenticated_user
+    )
+
+    query = (
+        select(Cart)
+        .where(Cart.user_id == user_id)
+        .options(
+            selectinload(Cart.items).options(
+                joinedload(CartItem.movie).options(
+                    selectinload(Movie.genres)
+                )
+            )
+        )
+    )
+
+    result = await db.execute(query)
+    cart = result.scalar_one_or_none()
+
+    if not cart:
+        cart = Cart(user_id=user_id)
+        db.add(cart)
+        await db.commit()
+        await db.refresh(cart)
+
+    return CartReadSchema.model_validate(cart)

@@ -36,6 +36,7 @@ class Cart(Base):
         cascade="all, delete-orphan"
     )
 
+
 class CartItem(Base):
     __tablename__ = "cart_items"
     __table_args__ = (
