@@ -122,6 +122,7 @@ class UserModel(Base):
     favorites: Mapped[List["Favorite"]] = relationship(
         "Favorite",
     )
+
     payments: Mapped[list["Payment"]] = relationship(
         "Payment",
         back_populates="user",
