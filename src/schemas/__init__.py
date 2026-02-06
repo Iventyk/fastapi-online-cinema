@@ -1,7 +1,11 @@
 from src.schemas.accounts import (
+    CurrentUser,
     UserCreateSchema,
     UserReadSchema,
+    UserLoginSchema,
+    LoginResponseSchema,
 )
+
 from src.schemas.movies import (
     MovieCreate,
     MovieUpdate,
@@ -20,8 +24,11 @@ from src.schemas.shopping_cart import (
 )
 
 __all__ = [
+    "CurrentUser",
     "UserCreateSchema",
     "UserReadSchema",
+    "UserLoginSchema",
+    "LoginResponseSchema",
     "MovieCreate",
     "MovieUpdate",
     "MovieListItem",
