@@ -42,16 +42,117 @@ from src.databases import get_db
 
 Realizations:
 
-Annotated[Settings, Depends(get_settings)] - retrieve settings object;
+Annotated[Settings, Depends(get_settings)] 
+- retrieve settings object;
 
-db: Annotated[AsyncSession, Depends(get_db)] - retrieve db session;
+db: Annotated[AsyncSession, Depends(get_db)] 
+- retrieve db session;
 
-jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)] - retrieve jwt_manager
+jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)] 
+- retrieve jwt_manager
 
-current_user: Annotated[CurrentUser, Depends(get_current_user)] - retrieve current authorized user
+current_user: Annotated[CurrentUser, Depends(get_current_user)] 
+- retrieve current authorized user
 
 ```
 
 
+##  Authorization and Authentication Overview
+**UserGroupEnum** - Defines user access levels within the system:
+```
+USER – default application user
+MODERATOR – elevated permissions
+ADMIN – full administrative access
+```
 
 
+**GenderEnum** - Used in user profiles:
+```
+MALE
+FEMALE
+```
+**User Groups**
+```
+UserGroupModel
+Represents a role/group assigned to users.
+
+Fields:
+id – primary key
+name – unique group name (UserGroupEnum)
+
+Relationships:
+One-to-many with UserModel (UserGroupModel.users)
+
+Notes:
+Each user belongs to at most one group
+Groups are used for authorization and role-based access control (RBAC)
+```
+**UserModel**
+```
+UserModel
+Represents an application user and authentication identity.
+
+Fields:
+id – primary key
+email – unique email address (indexed)
+hashed_password – securely stored password hash
+is_active – account activation status
+created_at – creation timestamp
+updated_at – last update timestamp
+group_id – foreign key to user_groups
+
+Relationships:
+Many-to-one with UserGroupModel
+One-to-one with UserProfileModel
+One-to-one with ActivationTokenModel
+One-to-one with PasswordResetTokenModel
+One-to-many with RefreshTokenModel
+
+Security Design:
+Passwords are write-only
+Password hashing and validation are enforced at the model level
+Raw passwords are never stored or exposed
+
+Utility Methods:
+create(...) – factory method for safe user creation
+check_password(...) – verifies password against stored hash
+has_group(...) – role membership check
+```
+**UserProfileModel**
+```
+UserProfileModel
+Stores optional personal and demographic information for a user.
+
+Fields:
+id – primary key
+first_name
+last_name
+avatar – URL or path to profile image
+gender – GenderEnum
+date_of_birth
+info – free-form additional information
+user_id – unique foreign key to users
+
+Relationships:
+One-to-one with UserModel
+
+Notes:
+Profile is optional but strictly one profile per user
+Automatically deleted when the user is deleted
+```
+**Token System**
+```
+All tokens inherit from a shared abstract base.
+TokenBaseModel (Abstract)
+Base model for all user-related tokens.
+
+Common Fields:
+id – primary key
+token – unique token string
+expires_at – expiration datetime (UTC)
+user_id – foreign key to users
+
+Notes:
+Tokens are time-limited
+Cascade deletion ensures cleanup when a user is removed
+```
