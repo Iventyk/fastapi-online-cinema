@@ -9,7 +9,7 @@ from src.crud.shopping_cart import (
     clear_cart, get_purchased_items
 )
 from src.databases.models import Order, StatusEnum, OrderItem
-from src.schemas import CartItemCreateSchema, CartItemRemoveSchema
+from src.schemas import CartItemCreateSchema
 from src.databases.models.shopping_cart import Cart, CartItem
 from src.exceptions import CartItemAlreadyExist, CartItemDoesNotExist, CartItemsDoesNotExist
 
@@ -107,13 +107,12 @@ async def test_remove_cart_item(
     db_session.add(item)
     await db_session.commit()
 
-    remove_schema = CartItemRemoveSchema(cart_item_id=item.id)
 
     await remove_cart_item(
         db=db_session,
         user_id=test_user.id,
         authenticated_user=auth_user_schema,
-        cart_item=remove_schema
+        cart_item_id=item.id
     )
 
     db_session.expire_all()
@@ -129,14 +128,13 @@ async def test_remove_not_existing_cart_item(
     db_session.add(cart)
     await db_session.flush()
 
-    remove_schema = CartItemRemoveSchema(cart_item_id=1)
 
     with pytest.raises(CartItemDoesNotExist):
         await remove_cart_item(
         db=db_session,
         user_id=test_user.id,
         authenticated_user=auth_user_schema,
-        cart_item=remove_schema
+        cart_item_id=1
     )
 
 

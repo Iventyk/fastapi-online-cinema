@@ -22,7 +22,6 @@ from src.databases.models import (
 )
 from src.schemas import (
     CartReadSchema,
-    CartItemRemoveSchema,
     CartItemCreateSchema,
     MovieInCartSchema,
     CurrentUser,
@@ -77,7 +76,7 @@ async def remove_cart_item(
     db: Annotated[AsyncSession, Depends(get_db)],
     user_id: int,
     authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
-    cart_item: CartItemRemoveSchema,
+    cart_item_id: int,
 ) -> None:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
@@ -92,7 +91,7 @@ async def remove_cart_item(
         raise CartItemDoesNotExist("Cart not found")
 
     query_item = select(CartItem).where(
-        CartItem.id == cart_item.cart_item_id, CartItem.cart_id == cart.id
+        CartItem.id == cart_item_id, CartItem.cart_id == cart.id
     )
     result_item = await db.execute(query_item)
     item = result_item.scalar_one_or_none()

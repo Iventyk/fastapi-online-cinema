@@ -34,6 +34,3 @@ class CartReadSchema(BaseModel):
 class CartItemCreateSchema(BaseModel):
     movie_id: int
 
-
-class CartItemRemoveSchema(BaseModel):
-    cart_item_id: int

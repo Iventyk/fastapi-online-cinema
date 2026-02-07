@@ -24,7 +24,6 @@ from src.exceptions import (
 from src.schemas import (
     MovieInCartSchema,
     CartItemCreateSchema,
-    CartItemRemoveSchema,
     CartReadSchema,
     CurrentUser,
 )
@@ -67,21 +66,21 @@ async def create_cart_item(
 
 
 @shopping_cart_router.delete(
-    "/{user_id}/",
+    "/{user_id}/{cart_item_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_cart_item(
     user_id: int,
     authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    cart_item: CartItemRemoveSchema,
+    cart_item_id: int,
 ) -> None:
     try:
         await remove_cart_item(
             db=db,
             user_id=user_id,
             authenticated_user=authenticated_user,
-            cart_item=cart_item,
+            cart_item_id=cart_item_id,
         )
 
     except (UserNotExist, CartItemDoesNotExist) as error:
