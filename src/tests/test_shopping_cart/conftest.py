@@ -1,8 +1,14 @@
+from typing import AsyncGenerator
+
 import pytest
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import event
+from httpx import AsyncClient, ASGITransport
 
+from src.databases.models import Cart, CartItem
+from src.main import app
+from src.databases import get_db
 from src.databases.models.base import Base
 from src.databases.models.accounts import UserGroupModel, UserGroupEnum, UserModel
 from src.databases.models.movies import Certification, Genre, Movie
@@ -21,6 +27,7 @@ def event_loop():
 
 @pytest.fixture(scope="function")
 async def db_engine():
+    """Create testing engine"""
     engine = create_async_engine(DATABASE_URL, echo=False)
 
     @event.listens_for(engine.sync_engine, "connect")
@@ -38,10 +45,32 @@ async def db_engine():
 
 @pytest.fixture
 async def db_session(db_engine):
+    """Create testing database session"""
     async_session = async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
         await session.rollback()
+
+
+@pytest.fixture
+async def client(db_session) -> AsyncGenerator[AsyncClient, None]:
+    """
+    Async client for requests imitation.
+    """
+
+    app.dependency_overrides[get_db] = lambda: db_session
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def cleanup_overrides():
+    yield
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -114,6 +143,27 @@ async def test_movie(db_session, setup_dependencies):
     await db_session.commit()
     await db_session.refresh(movie)
     return movie
+
+
+@pytest.fixture
+async def test_cart(db_session, test_movie, test_user):
+    """Create test cart object in database"""
+    cart = Cart(user_id=test_user.id)
+    db_session.add(cart)
+    await db_session.commit()
+    await db_session.refresh(cart)
+    return cart
+
+
+@pytest.fixture
+async def test_cart_item(db_session, test_movie, test_cart):
+    """Create test cart item object in database"""
+    cart_item = CartItem(cart_id=test_cart.id, movie_id=test_movie.id)
+    db_session.add(cart_item)
+    await db_session.commit()
+    await db_session.refresh(cart_item)
+    return cart_item
+
 
 @pytest.fixture
 def auth_user_schema(test_user):
