@@ -85,7 +85,7 @@ async def test_user(db_session, setup_dependencies):
 
 @pytest.fixture
 async def test_moderator(db_session, setup_dependencies):
-    """Creating test user in database"""
+    """Creating test moderator in database"""
     user = await UserModel.create(
         email="test_crud_moderator@example.com",
         raw_password="SuperStrongPassword3!",
