@@ -88,7 +88,11 @@ class UserModel(Base):
         "UserGroupModel", back_populates="users"
     )
     cart: Mapped["Cart"] = relationship(
-        "Cart", back_populates="user", uselist=False
+        "Cart",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True
     )
     orders: Mapped[List["Order"]] = relationship(
         "Order", back_populates="user", cascade="all, delete-orphan"
