@@ -94,7 +94,7 @@ async def delete_cart_item(
 
 
 @shopping_cart_router.delete(
-    "/{user_id}/clean",
+    "/{user_id}/clean/",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_cart_items(
@@ -108,7 +108,6 @@ async def delete_cart_items(
             user_id=user_id,
             authenticated_user=authenticated_user,
         )
-
     except (UserNotExist,) as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
