@@ -17,10 +17,6 @@ from src.exceptions.shopping_cart import (
 from src.exceptions.movies import (
     MovieDoesNotExist,
 )
-from src.exceptions.security import (
-    TokenExpiredError,
-    InvalidTokenError,
-)
 from src.exceptions.payment import (
     RepeatPurchaseNotAllowed,
 )
@@ -49,4 +45,9 @@ __all__ = [
     "PasswordChangeError",
     "ProfileAlreadyExistsException",
     "ProfileDoesNotExistException",
+    "MovieDoesNotExist",
+    "RepeatPurchaseNotAllowed",
+    "CartItemAlreadyExist",
+    "CartItemDoesNotExist",
+    "CartItemsDoesNotExist",
 ]

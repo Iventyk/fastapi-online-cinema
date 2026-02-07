@@ -55,6 +55,7 @@ class ChangePasswordSchema(BaseModel):
 class ForgotPasswordSchema(BaseModel):
     email: EmailStr
 
+
 class ResetPasswordRequestSchema(BaseModel):
     token: str
     email: EmailStr
@@ -72,7 +73,7 @@ class UserReadSchema(UserBaseSchema):
 
     id: int
     is_active: bool
-    permission: UserGroupEnum = None
+    permission: UserGroupEnum | None = None
 
 
 class UserLoginSchema(BaseModel):
@@ -93,4 +94,4 @@ class CommonResponseSchema(BaseModel):
 
 class AdminOperatedData(BaseModel):
     activation: bool = False
-    permission: UserGroupEnum = None
+    permission: UserGroupEnum | None = None

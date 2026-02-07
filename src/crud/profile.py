@@ -11,7 +11,7 @@ from src.exceptions import (
     UserNotExist,
     UserAccountNotActivated,
     ProfileAlreadyExistsException,
-    ProfileDoesNotExistException
+    ProfileDoesNotExistException,
 )
 from src.schemas import ProfileCreateSchema, CurrentUser
 from src.schemas.profile import ProfileReadSchema, ProfileUpdateSchema
@@ -19,15 +19,13 @@ from src.securuty.utils import get_current_user
 
 
 async def _get_profile_by_id(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
-) -> type[UserProfileModel]:
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> UserProfileModel:
     profile = await db.get(
         UserProfileModel,
         account_id,
-        options=[
-            selectinload(UserProfileModel.user)
-        ]
+        options=[selectinload(UserProfileModel.user)],
     )
     if not profile:
         raise ProfileDoesNotExistException(
@@ -37,21 +35,17 @@ async def _get_profile_by_id(
 
 
 async def create_user_profile(
-        account_id: int,
-        profile_data: Annotated[ProfileCreateSchema, Form()],
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    account_id: int,
+    profile_data: Annotated[ProfileCreateSchema, Form()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> ProfileReadSchema:
     if auth_user.user_id != account_id and auth_user.permission != "admin":
         raise UserPermissionDenied(
             message="You are not allowed to perform this action"
         )
     operated_acc = await db.get(
-        UserModel,
-        account_id,
-        options=[
-            selectinload(UserModel.profile)
-        ]
+        UserModel, account_id, options=[selectinload(UserModel.profile)]
     )
     if not operated_acc:
         raise UserNotExist(message="Account with provided id does not exist")
@@ -81,56 +75,29 @@ async def create_user_profile(
     db.add(db_profile)
     await db.commit()
     await db.refresh(db_profile)
-    return ProfileReadSchema(
-        id=db_profile.id,
-        user_id=db_profile.user_id,
-        first_name=db_profile.first_name,
-        last_name=db_profile.last_name,
-        gender=db_profile.gender,
-        date_of_birth=db_profile.date_of_birth,
-        info=db_profile.info,
-        avatar=db_profile.avatar,
-    )
+    return ProfileReadSchema.model_validate(db_profile)
 
 
 async def retrieve_user_profile(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ProfileReadSchema:
     profile = await _get_profile_by_id(account_id, db)
 
-    return ProfileReadSchema(
-        id=profile.id,
-        user_id=profile.user_id,
-        first_name=profile.first_name,
-        last_name=profile.last_name,
-        gender=profile.gender,
-        date_of_birth=profile.date_of_birth,
-        info=profile.info,
-        avatar=profile.avatar,
-    )
+    return ProfileReadSchema.model_validate(profile)
 
 
 async def update_user_profile(
-        account_id: int,
-        profile_data: ProfileUpdateSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
+    profile_data: ProfileUpdateSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ProfileReadSchema:
     profile = await _get_profile_by_id(account_id, db)
 
-    profile_data = profile_data.model_dump(exclude_unset=True)
-    for key, value in profile_data.items():
+    update_dict = profile_data.model_dump(exclude_unset=True)
+    for key, value in update_dict.items():
         setattr(profile, key, value)
 
     await db.commit()
     await db.refresh(profile)
-    return ProfileReadSchema(
-        id=profile.id,
-        user_id=profile.user_id,
-        first_name=profile.first_name,
-        last_name=profile.last_name,
-        gender=profile.gender,
-        date_of_birth=profile.date_of_birth,
-        info=profile.info,
-        avatar=profile.avatar,
-    )
+    return ProfileReadSchema.model_validate(profile)

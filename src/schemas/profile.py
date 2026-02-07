@@ -12,7 +12,7 @@ class ProfileCreateSchema(BaseModel):
     gender: GenderEnum
     date_of_birth: date
     info: str
-    avatar: UploadFile = None
+    avatar: UploadFile | None = None
 
 
 class ProfileReadSchema(BaseModel):
@@ -28,9 +28,9 @@ class ProfileReadSchema(BaseModel):
 
 
 class ProfileUpdateSchema(BaseModel):
-    first_name: str = None
-    last_name: str = None
-    gender: GenderEnum = None
-    date_of_birth: date = None
-    info: str = None
-    avatar: UploadFile = None
+    first_name: str | None = None
+    last_name: str | None = None
+    gender: GenderEnum | None = None
+    date_of_birth: date | None = None
+    info: str | None = None
+    avatar: UploadFile | None = None

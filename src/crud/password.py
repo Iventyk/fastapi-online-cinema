@@ -11,32 +11,40 @@ from src.crud.accounts import get_user_by_email
 from src.databases import get_db
 from src.config import get_jwt_manager
 from src.databases.models import PasswordResetTokenModel, UserModel
-from src.exceptions import UserAccountNotActivated, PasswordChangeError, \
-    IncorrectCredentials
-from src.schemas import CurrentUser, CommonResponseSchema, \
-    ChangePasswordSchema, ResetPasswordRequestSchema
+from src.exceptions import (
+    UserAccountNotActivated,
+    PasswordChangeError,
+    IncorrectCredentials,
+    UserNotExist,
+)
+from src.schemas import (
+    CurrentUser,
+    CommonResponseSchema,
+    ChangePasswordSchema,
+    ResetPasswordRequestSchema,
+)
 from src.securuty import JWTAuthManagerInterface
 from src.securuty.utils import get_current_user
 
 
 async def do_pswd_restore_request(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        email: EmailStr,
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)
-        ],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    email: EmailStr,
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
 ) -> CommonResponseSchema:
     user = await get_user_by_email(db=db, email=email)
 
-    success_msg = ("If an account with this email exists, "
-                   "a reset link has been sent.")
+    success_msg = (
+        "If an account with this email exists, " "a reset link has been sent."
+    )
 
     if not user or not user.is_active:
         return CommonResponseSchema(message=success_msg)
 
     await db.execute(
         delete(PasswordResetTokenModel).where(
-            PasswordResetTokenModel.user_id == user.id)
+            PasswordResetTokenModel.user_id == user.id
+        )
     )
 
     new_token = jwt_manager.create_reset_token()
@@ -55,11 +63,14 @@ async def do_pswd_restore_request(
 
 
 async def change_password(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        new_password: ChangePasswordSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    new_password: ChangePasswordSchema,
 ) -> CommonResponseSchema:
     user = await db.get(UserModel, auth_user.user_id)
+
+    if user is None:
+        raise UserNotExist(message="User not found")
 
     if not user.check_password(password=new_password.old_password):
         raise PasswordChangeError("Incorrect password")
@@ -74,9 +85,10 @@ async def change_password(
         message="Password has been changed successfully",
     )
 
+
 async def do_pswd_reset_confirm(
-        data: ResetPasswordRequestSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    data: ResetPasswordRequestSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
     smtp = await db.execute(
         select(PasswordResetTokenModel)
@@ -88,6 +100,9 @@ async def do_pswd_reset_confirm(
         raise IncorrectCredentials(message="Incorrect Token")
 
     user = await db.get(UserModel, existing_token.user_id)
+
+    if user is None:
+        raise UserNotExist(message="User associated with token not found")
 
     user.password = data.password
     await db.commit()

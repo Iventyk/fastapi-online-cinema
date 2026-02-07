@@ -6,6 +6,7 @@ class ProfileBaseException(Exception):
             message = "Something went wrong during profile operation"
         super().__init__(message)
 
+
 class ProfileAlreadyExistsException(ProfileBaseException):
     pass
 
