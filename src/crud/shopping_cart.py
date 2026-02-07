@@ -107,32 +107,32 @@ async def remove_cart_item(
 
 
 async def clear_cart(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    user_id: int,
-    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> None:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
         user_id=user_id, authenticated_user=authenticated_user
     )
 
-    query_cart = select(Cart).where(Cart.user_id == user_id)
-    result_cart = await db.execute(query_cart)
-    cart = result_cart.scalar_one_or_none()
+    query = select(Cart).where(Cart.user_id == user_id).options(selectinload(Cart.items))
+    result = await db.execute(query)
+    cart = result.scalar_one_or_none()
 
-    if not cart:
-        raise CartItemsDoesNotExist("Cart already empty")
+    if not cart or not cart.items:
+        raise CartItemsDoesNotExist("Cart is already empty")
 
-    query_delete = delete(CartItem).where(CartItem.cart_id == cart.id)
+    for item in cart.items:
+        await db.delete(item)
 
-    await db.execute(query_delete)
     await db.commit()
 
 
 async def get_cart(
-    db: Annotated[AsyncSession, Depends(get_db)],
-    user_id: int,
-    authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        db: Annotated[AsyncSession, Depends(get_db)],
+        user_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CartReadSchema:
     await validate_user(db=db, user_id=user_id)
     await validate_user_permission(
@@ -156,7 +156,9 @@ async def get_cart(
         cart = Cart(user_id=user_id)
         db.add(cart)
         await db.commit()
-        await db.refresh(cart)
+
+        result = await db.execute(query)
+        cart = result.scalar_one()
 
     return CartReadSchema.model_validate(cart)
 

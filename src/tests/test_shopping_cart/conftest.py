@@ -4,9 +4,9 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import event
 
 from src.databases.models.base import Base
-from src.databases.models.accounts import UserGroupModel, UserGroupEnum
-from src.databases.models.movies import Certification, Genre
-
+from src.databases.models.accounts import UserGroupModel, UserGroupEnum, UserModel
+from src.databases.models.movies import Certification, Genre, Movie
+from src.schemas import CurrentUser
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -51,6 +51,8 @@ async def setup_dependencies(db_session):
     """
     group = UserGroupModel(name=UserGroupEnum.USER)
     db_session.add(group)
+    moderator_group = UserGroupModel(name=UserGroupEnum.MODERATOR)
+    db_session.add(moderator_group)
 
     cert = Certification(name="PG-13")
     db_session.add(cert)
@@ -62,6 +64,79 @@ async def setup_dependencies(db_session):
 
     return {
         "group_id": group.id,
+        "moderator_group_id": moderator_group.id,
         "certification_id": cert.id,
         "genre_id": genre.id
     }
+
+@pytest.fixture
+async def test_user(db_session, setup_dependencies):
+    """Creating test user in database"""
+    user = await UserModel.create(
+        email="test_crud@example.com",
+        raw_password="SuperStrongPassword2!",
+        group_id=setup_dependencies["group_id"],
+    )
+    user.is_active = True
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+@pytest.fixture
+async def test_moderator(db_session, setup_dependencies):
+    """Creating test user in database"""
+    user = await UserModel.create(
+        email="test_crud_moderator@example.com",
+        raw_password="SuperStrongPassword3!",
+        group_id=setup_dependencies["moderator_group_id"],
+    )
+    user.is_active = True
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+@pytest.fixture
+async def test_movie(db_session, setup_dependencies):
+    """Create test movie object in database"""
+    movie = Movie(
+        name="Test Matrix",
+        year=1999,
+        time=136,
+        imdb=8.7,
+        votes=5000,
+        description="Sci-fi classic",
+        price=15.00,
+        certification_id=setup_dependencies["certification_id"]
+    )
+    db_session.add(movie)
+    await db_session.commit()
+    await db_session.refresh(movie)
+    return movie
+
+@pytest.fixture
+def auth_user_schema(test_user):
+    """
+    Authorized user imitation
+    """
+    return CurrentUser(
+        user_id=test_user.id,
+        email=str(test_user.email),
+        permission="USER",
+        is_active=True,
+        profile_id=None
+    )
+
+@pytest.fixture
+def auth_moderator_schema(test_moderator):
+    """
+    Authorized moderator imitation
+    """
+    return CurrentUser(
+        user_id=test_moderator.id,
+        email=str(test_moderator.email),
+        permission="MODERATOR",
+        is_active=True,
+        profile_id=None
+    )
