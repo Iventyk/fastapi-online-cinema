@@ -94,7 +94,7 @@ async def delete_cart_item(
 
 
 @shopping_cart_router.delete(
-    "/{user_id}/clean/",
+    "/{user_id}/clean",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_cart_items(
