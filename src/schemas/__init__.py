@@ -22,6 +22,10 @@ from src.schemas.shopping_cart import (
     MovieInCartSchema,
 )
 
+from src.schemas.favorites import (
+    FavoriteRead,
+)
+
 __all__ = [
     "CurrentUser",
     "UserCreateSchema",
@@ -39,4 +43,5 @@ __all__ = [
     "CartReadSchema",
     "CartItemCreateSchema",
     "MovieInCartSchema",
+    "FavoriteRead",
 ]

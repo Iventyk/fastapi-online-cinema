@@ -21,6 +21,7 @@ from src.config import get_settings
 from src.databases.models.base import Base
 from src.validators import validate_password
 from src.securuty import hash_password, verify_password
+from src.databases.models.favorites import Favorite
 
 if TYPE_CHECKING:
     from src.databases.models import Cart, Order, Payment
@@ -120,6 +121,10 @@ class UserModel(Base):
 
     profile: Mapped[Optional["UserProfileModel"]] = relationship(
         "UserProfileModel", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    favorites: Mapped[List["Favorite"]] = relationship(
+        "Favorite",
     )
 
     payments: Mapped[list["Payment"]] = relationship(

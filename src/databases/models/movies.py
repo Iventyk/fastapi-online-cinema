@@ -19,6 +19,7 @@ from sqlalchemy.orm import (
 )
 
 from .base import Base
+from src.databases.models.favorites import Favorite
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
@@ -175,6 +176,12 @@ class Movie(Base):
         secondary=movie_directors,
         back_populates="movies",
         lazy="selectin",
+    )
+
+    favorited_by: Mapped[List["Favorite"]] = relationship(
+        "Favorite",
+        back_populates="movie",
+        cascade="all, delete-orphan",
     )
     cart_items: Mapped[List["CartItem"]] = relationship(
         "CartItem", back_populates="movie"
