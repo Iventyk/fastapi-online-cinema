@@ -63,5 +63,6 @@ testpaths = ["src/tests"]
 
 [dependency-groups]
 dev = [
-    "pytest-mock (>=3.15.1,<4.0.0)"
+    "pytest-mock (>=3.15.1,<4.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
 ]
