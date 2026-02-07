@@ -23,12 +23,12 @@ if TYPE_CHECKING:
     from src.schemas import CurrentUser
 
 
-
 async def validate_user(
     db: AsyncSession,
     user_id: int,
 ) -> None:
-    from src.databases.models import UserModel
+    from src.databases.models import UserModel  # noqa: 811
+
     user = await db.get(UserModel, user_id)
     if not user:
         raise UserNotExist(
@@ -40,7 +40,7 @@ async def validate_user_permission(
     user_id: int,
     authenticated_user: "CurrentUser",
 ) -> None:
-    from src.databases.models import UserGroupEnum
+    from src.databases.models import UserGroupEnum  # noqa: 811
 
     groups = UserGroupEnum
     has_permission = (
@@ -70,7 +70,7 @@ async def validate_movie(db: AsyncSession, movie_id: int) -> "Movie":
 async def validate_movie_purchase_status(
     db: AsyncSession, user_id: int, movie_id: int
 ) -> None:
-    from src.databases.models import (
+    from src.databases.models import (  # noqa: 811
         StatusEnum,
         Order,
         OrderItem,
