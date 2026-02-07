@@ -23,6 +23,8 @@ from src.schemas import (
     ProfileUpdateSchema,
 )
 from src.securuty.utils import get_current_user
+from src.storage import S3StorageInterface
+from src.config import get_storage
 
 profile_router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -37,6 +39,7 @@ async def create_profile(
     profile_data: Annotated[ProfileCreateSchema, Form()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     try:
         return await create_user_profile(
@@ -44,6 +47,7 @@ async def create_profile(
             profile_data=profile_data,
             db=db,
             auth_user=auth_user,
+            s3_storage=s3_storage,
         )
     except UserPermissionDenied as error:
         raise HTTPException(

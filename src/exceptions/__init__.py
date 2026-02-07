@@ -29,6 +29,15 @@ from src.exceptions.profile import (
     ProfileAlreadyExistsException,
     ProfileDoesNotExistException,
 )
+from src.exceptions.storages import (
+    S3PermissionError,
+    S3ConnectionError,
+    S3FileNotFoundError,
+    S3BucketNotFoundError,
+    S3FileUploadError,
+    BaseS3Error,
+)
+from src.exceptions.email import BaseEmailError
 
 __all__ = [
     "BaseAccountException",
@@ -50,4 +59,13 @@ __all__ = [
     "CartItemAlreadyExist",
     "CartItemDoesNotExist",
     "CartItemsDoesNotExist",
+    # storage errors
+    "S3PermissionError",
+    "S3ConnectionError",
+    "S3FileNotFoundError",
+    "S3BucketNotFoundError",
+    "S3FileUploadError",
+    "BaseS3Error",
+    # email errors
+    "BaseEmailError",
 ]

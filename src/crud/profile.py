@@ -1,10 +1,13 @@
 from typing import Annotated, Any, Coroutine
+from uuid import uuid4
 
 from fastapi import Form, Depends
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
+
 from src.databases import get_db
+from src.config import get_storage
 from src.databases.models import UserModel, UserProfileModel
 from src.exceptions import (
     UserPermissionDenied,
@@ -16,6 +19,7 @@ from src.exceptions import (
 from src.schemas import ProfileCreateSchema, CurrentUser
 from src.schemas.profile import ProfileReadSchema, ProfileUpdateSchema
 from src.securuty.utils import get_current_user
+from src.storage import S3StorageInterface
 
 
 async def _get_profile_by_id(
@@ -39,6 +43,7 @@ async def create_user_profile(
     profile_data: Annotated[ProfileCreateSchema, Form()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)]
 ) -> ProfileReadSchema:
     if auth_user.user_id != account_id and auth_user.permission != "admin":
         raise UserPermissionDenied(
@@ -59,9 +64,17 @@ async def create_user_profile(
         raise ProfileAlreadyExistsException(
             message="Account with provided id already has profile"
         )
-    # picture = profile_data.picture
+    picture = profile_data.avatar
+    file_data = await picture.read()
+    file_name = f"avatar/{uuid4()}_{picture.filename}"
 
-    # TODO Upload profile picture and return url
+    await s3_storage.upload_file(
+        file_name=file_name,
+        file_data=file_data,
+        content_type=picture.content_type,
+    )
+
+    avatar_url = await s3_storage.get_file_url(file_name=file_name)
 
     db_profile = UserProfileModel(
         first_name=profile_data.first_name,
@@ -69,7 +82,7 @@ async def create_user_profile(
         gender=profile_data.gender,
         date_of_birth=profile_data.date_of_birth,
         info=profile_data.info,
-        avatar="Not implemented yet",
+        avatar=avatar_url,
         user=operated_acc,
     )
     db.add(db_profile)

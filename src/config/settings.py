@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, computed_field
 
 
 class BaseAppSettings(BaseSettings):
@@ -19,6 +19,7 @@ class BaseAppSettings(BaseSettings):
     PATH_TO_MOVIES_CSV: str = str(
         BASE_DIR / "database" / "seed_data" / "imdb_movies.csv"
     )
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "local")
 
     DEV_DATABASE_URL: str
     API_V1_PREFIX: str = "/api/v1"
@@ -41,26 +42,30 @@ class BaseAppSettings(BaseSettings):
     MAILHOG_API_PORT: int = 8025
 
     S3_STORAGE_HOST: str = Field(
-        default="minio-theater", validation_alias="MINIO_HOST"
+        default="minio-cinema", validation_alias="MINIO_HOST"
     )
     S3_STORAGE_PORT: int = Field(default=9000, validation_alias="MINIO_PORT")
     S3_STORAGE_ACCESS_KEY: str = Field(
         default="minioadmin", validation_alias="MINIO_ROOT_USER"
     )
     S3_STORAGE_SECRET_KEY: str = Field(
-        default="some_password", validation_alias="MINIO_ROOT_PASSWORD"
+        default="bbc_cinema_password", validation_alias="MINIO_ROOT_PASSWORD"
     )
     S3_BUCKET_NAME: str = Field(
-        default="theater-storage", validation_alias="MINIO_STORAGE"
+        default="ddc-cinema-storage", validation_alias="MINIO_STORAGE"
     )
+
+    @property
+    def S3_STORAGE_ENDPOINT(self) -> str:
+        return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
 
 
 class Settings(BaseAppSettings):
-    POSTGRES_USER: str = "test_user"
-    POSTGRES_PASSWORD: str = "test_password"
-    POSTGRES_HOST: str = "test_host"
+    POSTGRES_USER: Optional[str] = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD: Optional[str] = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_HOST: Optional[str] = os.getenv("POSTGRES_HOST")
     POSTGRES_DB_PORT: int = 5432
-    POSTGRES_DB: str = "test_db"
+    POSTGRES_DB: Optional[str] = os.getenv("POSTGRES_DB")
 
     SECRET_KEY_ACCESS: str = Field(
         default_factory=lambda: os.getenv(
@@ -73,6 +78,18 @@ class Settings(BaseAppSettings):
         )
     )
     JWT_SIGNING_ALGORITHM: str = "HS256"
+
+    # DATABASE_URL: str = f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_DB_PORT}/{POSTGRES_DB}"
+
+    @computed_field
+    @property
+    def DATABASE_URL(self) -> str:
+        if self.ENVIRONMENT == "docker":
+            return (
+                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_DB_PORT}/{self.POSTGRES_DB}"
+            )
+        return f"sqlite+aiosqlite:///{self.BASE_DIR}/bbc_cinema.db"
 
 
 class TestingSettings(BaseAppSettings):
