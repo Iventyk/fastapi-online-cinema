@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi.params import Depends
 from pydantic import EmailStr
 from sqlalchemy import select, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.models import (
@@ -18,7 +18,7 @@ from src.exceptions import (
     UserAlreadyExist,
     UserGroupNotExist,
     IncorrectCredentials,
-    UserNotActivated,
+    UserNotActivated, UserNotExist,
 )
 from src.schemas import (
     UserCreateSchema,
@@ -26,7 +26,7 @@ from src.schemas import (
     UserLoginSchema,
     LoginResponseSchema,
     CurrentUser,
-    CommonResponseSchema,
+    CommonResponseSchema, AdminOperatedData,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
@@ -257,4 +257,36 @@ async def logout_user(
 
     return CommonResponseSchema(
         message="Successfully logged out from all devices",
+    )
+
+
+async def manual_operation(
+        account_id: int,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        data: AdminOperatedData,
+) -> UserReadSchema:
+    account_to_operate = await db.get(
+        UserModel,
+        account_id,
+        options=[joinedload(UserModel.group)]
+    )
+
+    if not account_to_operate:
+        raise UserNotExist(message="Account with provided id does not exist")
+
+    if data.activation and not account_to_operate.is_active:
+        account_to_operate.is_active = True
+
+    if data.permission and account_to_operate.group.name != data.permission:
+        group = await db.scalar(
+            select(UserGroupModel)
+            .where(UserGroupModel.name == data.permission)
+        )
+        account_to_operate.group = group
+    await db.commit()
+    return UserReadSchema(
+        id=account_to_operate.id,
+        email=account_to_operate.email,
+        is_active=account_to_operate.is_active,
+        permission=account_to_operate.group.name
     )

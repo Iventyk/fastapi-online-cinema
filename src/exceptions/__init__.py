@@ -3,12 +3,11 @@ from src.exceptions.accounts import (
     UserAlreadyExist,
     UserGroupNotExist,
     UserNotExist,
-    UserPermissionDenied,
     IncorrectCredentials,
     UserAccountNotActivated,
     UserAlreadyActivated,
     UserNotActivated,
-
+    UserPermissionDenied,
 )
 from src.exceptions.shopping_cart import (
     CartItemAlreadyExist,
@@ -30,6 +29,10 @@ from src.exceptions.security import (
     InvalidTokenError,
     PasswordChangeError,
 )
+from src.exceptions.profile import (
+    ProfileAlreadyExistsException,
+    ProfileDoesNotExistException,
+)
 
 __all__ = [
     "BaseAccountException",
@@ -37,16 +40,13 @@ __all__ = [
     "UserGroupNotExist",
     "TokenExpiredError",
     "InvalidTokenError",
-    "UserNotExist",
     "UserPermissionDenied",
+    "UserNotExist",
     "IncorrectCredentials",
     "UserAccountNotActivated",
     "UserAlreadyActivated",
     "UserNotActivated",
     "PasswordChangeError",
-    "CartItemAlreadyExist",
-    "CartItemDoesNotExist",
-    "MovieDoesNotExist",
-    "RepeatPurchaseNotAllowed",
-    "CartItemsDoesNotExist",
+    "ProfileAlreadyExistsException",
+    "ProfileDoesNotExistException",
 ]

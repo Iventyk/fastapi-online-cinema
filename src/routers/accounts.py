@@ -13,10 +13,11 @@ from src.crud import (
     do_pswd_restore_request,
     activate_user,
     reactivate_user_token,
-    change_password,
+    change_password, do_pswd_reset_confirm, manual_operation,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, Settings, get_settings
+from src.databases.models import UserGroupEnum
 from src.exceptions import (
     BaseAccountException,
     IncorrectCredentials,
@@ -34,7 +35,8 @@ from src.schemas import (
     LoginResponseSchema,
     CommonResponseSchema,
     CurrentUser,
-    ChangePasswordSchema,
+    ChangePasswordSchema, ResetPasswordRequestSchema, ForgotPasswordSchema,
+    AdminOperatedData,
 )
 from src.securuty import JWTAuthManagerInterface
 from src.services import sync_guest_cart_to_user
@@ -47,6 +49,7 @@ account_router = APIRouter(prefix="/accounts", tags=["Accounts"])
     "/register/",
     status_code=status.HTTP_201_CREATED,
     response_model=UserReadSchema,
+    tags=["Account management"],
 )
 async def create_account(
         db: Annotated[AsyncSession, Depends(get_db)],
@@ -73,7 +76,13 @@ async def create_account(
 )
 async def get_accounts(
         db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[UserReadSchema]:
+    if auth_user.permission not in ["moderator", "admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Incorrect permission for current user",
+        )
     try:
         result = await get_list_of_users(
             db=db,
@@ -119,6 +128,7 @@ async def login_for_accounts(
     "/activate/",
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
+    tags=["Account management"],
 )
 async def activate_account(
         activation_token: str,
@@ -145,6 +155,7 @@ async def activate_account(
     "/reactivate-account/",
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
+    tags=["Account management"],
 )
 async def reactivate_account(
         user_data: UserLoginSchema,
@@ -188,7 +199,8 @@ async def logout_account(
 @account_router.post(
     "/change_password/",
     status_code=status.HTTP_200_OK,
-    response_model=CommonResponseSchema
+    response_model=CommonResponseSchema,
+    tags=["Password management"],
 )
 async def change_account_password(
         db: Annotated[AsyncSession, Depends(get_db)],
@@ -209,32 +221,70 @@ async def change_account_password(
         )
 
 
-@account_router.get(
+@account_router.post(
     "/password-reset/",
     status_code=status.HTTP_200_OK,
-    response_model=CommonResponseSchema
+    response_model=CommonResponseSchema,
+    tags=["Password management"],
 )
 async def reset_password(
+        data: ForgotPasswordSchema,
         db: Annotated[AsyncSession, Depends(get_db)],
         jwt_manager: Annotated[
             JWTAuthManagerInterface, Depends(get_jwt_manager)
         ],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CommonResponseSchema:
+    return await do_pswd_restore_request(
+        email=data.email,
+        db=db,
+        jwt_manager=jwt_manager,
+    )
+
+
+@account_router.post(
+    "/reset-password/confirm/",
+    status_code=status.HTTP_200_OK,
+    response_model=CommonResponseSchema,
+    tags=["Password management"],
+)
+async def reset_password(
+        data: ResetPasswordRequestSchema,
+        db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
     try:
-        result = await do_pswd_restore_request(
-            db=db,
-            auth_user=auth_user,
-            jwt_manager=jwt_manager,
-        )
-        return result
-    except UserAccountNotActivated as error:
+        return await do_pswd_reset_confirm(data=data, db=db)
+    except IncorrectCredentials as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(error)
         )
-    except (TokenExpiredError, InvalidTokenError, UserNotExist) as error:
+
+
+@account_router.post(
+    "/manual-operate/{account_id}/",
+    status_code=status.HTTP_200_OK,
+    response_model=UserReadSchema,
+)
+async def manual_operate_account(
+        account_id: int,
+        account_data: AdminOperatedData,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> UserReadSchema:
+    if auth_user.permission != UserGroupEnum.ADMIN:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(error)
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to perform this action"
         )
+    else:
+        try:
+            return await manual_operation(
+                account_id=account_id,
+                data=account_data,
+                db=db,
+            )
+        except UserNotExist as error:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=str(error)
+            )

@@ -26,6 +26,7 @@ python-jose = {extras = ["cryptography"], version = "^3.5.0"}
 bcrypt = "^5.0.0"
 aiosqlite = "^0.22.1"
 pydantic = {extras = ["email"], version = "^2.12.5"}
+python-multipart = "^0.0.22"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
