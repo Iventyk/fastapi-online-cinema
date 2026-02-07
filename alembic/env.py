@@ -12,12 +12,21 @@ from src.config.settings import Settings
 
 from src.config import get_settings
 from src.databases.models import (
-    UserModel,
     UserGroupModel,
+    UserModel,
     UserProfileModel,
     ActivationTokenModel,
-    RefreshTokenModel,
     PasswordResetTokenModel,
+    RefreshTokenModel,
+    Genre,
+    Star,
+    Director,
+    Certification,
+    Movie,
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
 )  # noqa
 from src.databases import Base
 

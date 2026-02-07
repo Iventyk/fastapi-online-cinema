@@ -4,6 +4,7 @@ from src.crud.shopping_cart import (
     remove_cart_item,
     get_cart,
     clear_cart,
+    get_purchased_items,
 )
 
 __all__ = [
@@ -14,4 +15,5 @@ __all__ = [
     "remove_cart_item",
     "get_cart",
     "clear_cart",
+    "get_purchased_items",
 ]

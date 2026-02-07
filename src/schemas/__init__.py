@@ -19,7 +19,6 @@ from src.schemas.movies import (
 from src.schemas.shopping_cart import (
     CartReadSchema,
     CartItemCreateSchema,
-    CartItemRemoveSchema,
     MovieInCartSchema,
 )
 
@@ -39,6 +38,5 @@ __all__ = [
     "CertificationSchema",
     "CartReadSchema",
     "CartItemCreateSchema",
-    "CartItemRemoveSchema",
     "MovieInCartSchema",
 ]
