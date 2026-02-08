@@ -21,6 +21,7 @@ from sqlalchemy.orm import (
 from .base import Base
 from src.databases.models.favorites import Favorite
 from src.databases.models.movie_reactions import MovieReaction
+from src.databases.models.movie_comments import MovieComment
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
@@ -199,4 +200,3 @@ class Movie(Base):
         "MovieComment",
         cascade="all, delete-orphan",
     )
-

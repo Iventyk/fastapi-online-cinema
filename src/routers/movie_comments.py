@@ -19,7 +19,7 @@ async def add_comment(
     data: CommentCreate,
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
-):
+) -> CommentRead:
     comment = MovieComment(
         movie_id=movie_id,
         user_id=user.id,
@@ -28,18 +28,19 @@ async def add_comment(
     db.add(comment)
     await db.commit()
     await db.refresh(comment)
-    return comment
+    return CommentRead.model_validate(comment)
 
 
 @router.get("/{movie_id}/comments", response_model=List[CommentRead])
 async def get_comments(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
-):
+) -> List[CommentRead]:
     result = await db.execute(
         select(MovieComment).where(MovieComment.movie_id == movie_id)
     )
-    return result.scalars().all()
+    comments = result.scalars().all()
+    return [CommentRead.model_validate(c) for c in comments]
 
 
 @router.delete("/comments/{comment_id}", status_code=204)
@@ -47,7 +48,7 @@ async def delete_comment(
     comment_id: int,
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
-):
+) -> None:
     result = await db.execute(
         select(MovieComment).where(MovieComment.id == comment_id)
     )
