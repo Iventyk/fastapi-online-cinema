@@ -1,10 +1,10 @@
+from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.dev_engine import get_db
 from src.databases.models.movie_reactions import MovieReaction
-from src.databases.models.movies import Movie
 from src.securuty.utils import get_current_user
 from src.databases.models.accounts import UserModel
 
@@ -57,14 +57,15 @@ async def remove_reaction(
 async def get_movie_reactions(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
-):
-    stmt = (
-        select(
-            func.sum(func.case((MovieReaction.value == 1, 1), else_=0)).label("likes"),
-            func.sum(func.case((MovieReaction.value == -1, 1), else_=0)).label("dislikes"),
-        )
-        .where(MovieReaction.movie_id == movie_id)
-    )
+) -> Dict[str, int]:
+    stmt = select(
+        func.sum(func.case((MovieReaction.value == 1, 1), else_=0)).label(
+            "likes"
+        ),
+        func.sum(func.case((MovieReaction.value == -1, 1), else_=0)).label(
+            "dislikes"
+        ),
+    ).where(MovieReaction.movie_id == movie_id)
 
     result = await db.execute(stmt)
     row = result.one()
@@ -101,4 +102,3 @@ async def _set_reaction(
         )
 
     await db.commit()
-
