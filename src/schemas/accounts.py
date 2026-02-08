@@ -95,3 +95,10 @@ class CommonResponseSchema(BaseModel):
 class AdminOperatedData(BaseModel):
     activation: bool = False
     permission: UserGroupEnum | None = None
+
+
+class RefreshTokenSchema(BaseModel):
+    refresh_token: str
+
+class RefreshTokenResponseSchema(BaseModel):
+    access_token: str

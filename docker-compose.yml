@@ -71,9 +71,6 @@ services:
       sh -c "poetry run alembic upgrade head &&      
              poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000"
 
-  # One-off service for applying Alembic migrations:
-  # Run manually (does not start on `up`):
-  # docker compose --profile migrate run --rm migrator
   migrator:
     build: .
     container_name: migrator_theater
@@ -87,8 +84,6 @@ services:
     command: [ "poetry", "run", "alembic", "upgrade", "head" ]
     restart: "no"
 
-  # Optional async stack (enable only after Celery integration):
-  # docker compose --profile async up -d
   additional_db:
     image: redis:7
     container_name: redis_cinema
@@ -112,7 +107,10 @@ services:
     env_file: .env
     depends_on:
       - additional_db
-    command: [ "sh", "-c", "echo 'Celery beat not configured yet' && sleep infinity" ]
+      - celery
+    command: [ "poetry", "run", "celery", "-A", "src.config.celery_app:celery_instance", "beat", "--loglevel=info" ]
+    volumes:
+      - ./src:/app/src
 
 volumes:
   postgres_data:
