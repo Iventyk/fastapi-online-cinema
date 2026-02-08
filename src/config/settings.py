@@ -119,14 +119,12 @@ class Settings(BaseAppSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def _get_db_url(self) -> str:
-        if self.ENVIRONMENT == "docker":
-            return (
-                f"postgresql+asyncpg://{self.POSTGRES_USER}"
-                f":{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}"
-                f":{self.POSTGRES_DB_PORT}/{self.POSTGRES_DB}"
-            )
-        return f"sqlite+aiosqlite:///{self.BASE_DIR}/bbc_cinema.db"
+    def DATABASE_URL(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}"
+            f":{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}"
+            f":{self.POSTGRES_DB_PORT}/{self.POSTGRES_DB}"
+        )
 
 
 class TestingSettings(BaseAppSettings):

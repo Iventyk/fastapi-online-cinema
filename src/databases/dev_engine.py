@@ -1,3 +1,5 @@
+import logging
+
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -20,7 +22,8 @@ engine = create_async_engine(
     url=settings.DATABASE_URL, connect_args=connect_args
 )
 
-print(f"ENVIROMENT IS: {settings.ENVIRONMENT}")
+print(f"ENVIRONMENT IS: {settings.ENVIRONMENT}")
+print(f"Connecting to {settings.DATABASE_URL}")
 
 AsyncSessionLocal = async_sessionmaker(
     autoflush=False, autocommit=False, expire_on_commit=False, bind=engine
