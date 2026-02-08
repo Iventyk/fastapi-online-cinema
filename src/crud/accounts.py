@@ -35,6 +35,10 @@ from src.config import get_jwt_manager, get_settings, Settings
 from src.securuty import JWTAuthManagerInterface
 from src.securuty.utils import get_current_user
 from src.services import sync_guest_cart_to_user
+from src.tasks import (
+    send_activation_email_task,
+    send_activation_complete_email_task,
+)
 
 
 async def create_new_user(
@@ -82,7 +86,14 @@ async def create_new_user(
         user_id=user.id,
         guest_movie_ids=user_data.guest_cart_items,
     )
-    # TODO Future refractor onto celery task: send_activation_email
+
+    activation_link = (
+        f"http://127.0.0.1:8000/accounts/activate/?activation_token={token}"
+    )
+
+    send_activation_email_task.delay(
+        email=user.email, activation_link=activation_link
+    )
 
     return UserReadSchema(
         id=user.id,
@@ -203,6 +214,12 @@ async def activate_user(
     await db.delete(token_record)
     await db.commit()
 
+    login_link = "http://127.0.0.1:8000/accounts/login/"
+
+    send_activation_complete_email_task.delay(
+        email=user.email, login_link=login_link
+    )
+
     return CommonResponseSchema(
         message="Successfully activate your account",
     )
@@ -242,7 +259,15 @@ async def reactivate_user_token(
 
     await db.commit()
 
-    # TODO: Send Email (краще робити це через background_tasks)
+    activation_link = (
+        f"http://127.0.0.1:8000/accounts/activate/"
+        f"?activation_token={new_token}"
+    )
+
+    send_activation_email_task.delay(
+        email=user.email, activation_link=activation_link
+    )
+
     return CommonResponseSchema(message=generic_msg)
 
 

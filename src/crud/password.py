@@ -12,7 +12,6 @@ from src.databases import get_db
 from src.config import get_jwt_manager
 from src.databases.models import PasswordResetTokenModel, UserModel
 from src.exceptions import (
-    UserAccountNotActivated,
     PasswordChangeError,
     IncorrectCredentials,
     UserNotExist,
@@ -25,6 +24,10 @@ from src.schemas import (
 )
 from src.securuty import JWTAuthManagerInterface
 from src.securuty.utils import get_current_user
+from src.tasks import (
+    send_password_reset_email_task,
+    send_password_reset_complete_email_task,
+)
 
 
 async def do_pswd_restore_request(
@@ -56,8 +59,12 @@ async def do_pswd_restore_request(
     db.add(reset_token_record)
     await db.commit()
 
-    # TODO: BackgroundTasks: Send Email
-    # send_reset_email(user.email, new_token)
+    reset_link = "http://127.0.0.1:8000/accounts/password-reset/"
+
+    send_password_reset_email_task.delay(
+        email=email,
+        reset_link=reset_link,
+    )
 
     return CommonResponseSchema(message=success_msg)
 
@@ -106,6 +113,14 @@ async def do_pswd_reset_confirm(
 
     user.password = data.password
     await db.commit()
+
+    login_link = "http://127.0.0.1:8000/accounts/login/"
+
+    send_password_reset_complete_email_task.delay(
+        email=data.email,
+        login_link=login_link,
+    )
+
     return CommonResponseSchema(
         message="User password has been restored successfully",
     )

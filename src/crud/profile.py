@@ -43,7 +43,7 @@ async def create_user_profile(
     profile_data: Annotated[ProfileCreateSchema, Form()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)]
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.user_id != account_id and auth_user.permission != "admin":
         raise UserPermissionDenied(
@@ -64,17 +64,19 @@ async def create_user_profile(
         raise ProfileAlreadyExistsException(
             message="Account with provided id already has profile"
         )
+    avatar_url = "Undefined"
     picture = profile_data.avatar
-    file_data = await picture.read()
-    file_name = f"avatar/{uuid4()}_{picture.filename}"
+    if picture:
+        file_data = await picture.read()
+        file_name = f"avatar/{uuid4()}_{picture.filename}"
 
-    await s3_storage.upload_file(
-        file_name=file_name,
-        file_data=file_data,
-        content_type=picture.content_type,
-    )
+        await s3_storage.upload_file(
+            file_name=file_name,
+            file_data=file_data,
+            content_type=picture.content_type,  # type: ignore[arg-type]
+        )
 
-    avatar_url = await s3_storage.get_file_url(file_name=file_name)
+        avatar_url = await s3_storage.get_file_url(file_name=file_name)
 
     db_profile = UserProfileModel(
         first_name=profile_data.first_name,

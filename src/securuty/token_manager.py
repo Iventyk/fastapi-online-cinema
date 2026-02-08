@@ -51,7 +51,7 @@ class JWTAuthManager(JWTAuthManagerInterface):
 
     @staticmethod
     def create_reset_token() -> str:
-        return os.urandom(64).hex()
+        return os.urandom(32).hex()
 
     def create_access_token(
         self,

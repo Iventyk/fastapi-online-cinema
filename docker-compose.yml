@@ -9,13 +9,15 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${POSTGRES_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
-    container_name: mailhog_theater
+    container_name: mailhog_cinema
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+      - "1025:1025"
+      - "8025:8025"
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
@@ -59,13 +61,14 @@ services:
       - "8000:8000"
     volumes:
       - ./src:/app/src
+      - ./alembic:/app/alembic
     depends_on:
-      - cinema_db
-      - mailhog
-      - minio
+      cinema_db:
+        condition: service_started
+      minio:
+        condition: service_healthy
     command: >
-      sh -c "poetry run alembic revision --autogenerate -m 'set up migrations' &&
-             poetry run alembic upgrade head &&      
+      sh -c "poetry run alembic upgrade head &&      
              poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000"
 
   # One-off service for applying Alembic migrations:
@@ -77,9 +80,8 @@ services:
     profiles: [ "migrate" ]
     env_file: .env
     depends_on:
-      - db
+      - cinema_db
     volumes:
-      - ./proj.db:/app/proj.db
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
     command: [ "poetry", "run", "alembic", "upgrade", "head" ]
@@ -89,29 +91,28 @@ services:
   # docker compose --profile async up -d
   additional_db:
     image: redis:7
-    container_name: redis_theater
-    profiles: ["async"]
+    container_name: redis_cinema
     ports:
       - "6379:6379"
 
   celery:
     build: .
-    container_name: celery_theater
-    profiles: ["async"]
+    container_name: celery_cinema
     env_file: .env
     depends_on:
       - additional_db
-      - db
-    command: ["sh", "-c", "echo 'Celery not configured yet' && sleep infinity"]
+      - cinema_db
+    command: [ "poetry", "run", "celery", "-A", "src.config.celery_app:celery_instance", "worker", "--loglevel=info" ]
+    volumes:
+      - ./src:/app/src
 
   celery-beat:
     build: .
-    container_name: celery_beat_theater
-    profiles: ["async"]
+    container_name: celery_beat_cinema
     env_file: .env
     depends_on:
       - additional_db
-    command: ["sh", "-c", "echo 'Celery beat not configured yet' && sleep infinity"]
+    command: [ "sh", "-c", "echo 'Celery beat not configured yet' && sleep infinity" ]
 
 volumes:
   postgres_data:
