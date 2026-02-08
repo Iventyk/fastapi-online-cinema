@@ -55,8 +55,10 @@ class BaseAppSettings(BaseSettings):
     )
 
     # Stripe
-    STRIPE_API_KEY: str
-    STRIPE_WEBHOOK_SECRET: str
+    STRIPE_API_KEY: str = Field(default="", validation_alias="STRIPE_API_KEY")
+    STRIPE_WEBHOOK_SECRET: str = Field(
+        default="", validation_alias="STRIPE_WEBHOOK_SECRET"
+    )
 
 
 class Settings(BaseAppSettings):

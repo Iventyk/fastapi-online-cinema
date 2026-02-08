@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends
 from sqlalchemy import select
@@ -19,7 +19,7 @@ async def create_payment_for_order(
     db: Annotated[AsyncSession, Depends(get_db)],
     user_id: int,
     order_id: int,
-) -> str:
+) -> str | Any:
     result = await db.execute(
         select(Order)
         .options(selectinload(Order.items))
@@ -58,6 +58,6 @@ async def create_payment_for_order(
             price_at_payment=item.price_at_order,
         )
 
-    #await db.commit()
+    await db.commit()
 
     return intent["client_secret"]
