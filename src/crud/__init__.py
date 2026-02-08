@@ -6,6 +6,7 @@ from src.crud.accounts import (
     activate_user,
     reactivate_user_token,
     manual_operation,
+    refresh_token,
 )
 from src.crud.password import (
     do_pswd_restore_request,
@@ -37,6 +38,7 @@ __all__ = [
     "do_pswd_restore_request",
     "change_password",
     "do_pswd_reset_confirm",
+    "refresh_token",
     "create_new_cart_item",
     "remove_cart_item",
     "get_cart",
