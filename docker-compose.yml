@@ -1,7 +1,7 @@
 services:
-  db:
+  cinema_db:
     image: postgres:16
-    container_name: postgres_theater
+    container_name: cinema_db
     env_file: .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -14,53 +14,62 @@ services:
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
-    container_name: mailhog_theater
+    container_name: mailhog_cinema
     ports:
-      - "1025:1025"  # SMTP
-      - "8025:8025"  # Web UI
+      - "1025:1025"
+      - "8025:8025"
 
   minio:
     image: minio/minio:RELEASE.2025-09-07T16-13-09Z
-    container_name: minio-theater
+    container_name: minio-cinema
     env_file: .env
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     ports:
-      - "${MINIO_PORT:-9000}:9000" # S3 API
-      - "9001:9001"                # Console
+      - "${MINIO_PORT:-9000}:9000"
+      - "9001:9001"
     volumes:
       - minio_data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Initializes MinIO bucket(s) for local development
   minio_mc:
     image: minio/mc:RELEASE.2025-08-13T08-35-41Z
-    container_name: minio-mc-theater
+    container_name: minio-mc-cinema
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
     env_file: .env
     entrypoint: >
       /bin/sh -c "
-      mc alias set theater http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
-      mc mb -p theater/${MINIO_STORAGE} || true &&
-      tail -f /dev/null
+      mc alias set cinema http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mc mb -p cinema/${MINIO_STORAGE} || true &&
+      mc anonymous set public cinema/${MINIO_STORAGE} && 
+      echo 'Bucket created and set to public'
       "
 
   web:
     build: .
-    container_name: api_theater
+    container_name: api_cinema
     env_file: .env
     ports:
       - "8000:8000"
     volumes:
       - ./src:/app/src
+      - ./alembic:/app/alembic
     depends_on:
-      - db
-      - mailhog
-      - minio
+      cinema_db:
+        condition: service_started
+      minio:
+        condition: service_healthy
     command: >
-      sh -c "poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000"
+      sh -c "poetry run alembic upgrade head &&      
+             poetry run uvicorn src.main:app --host 0.0.0.0 --port 8000"
 
   # One-off service for applying Alembic migrations:
   # Run manually (does not start on `up`):
@@ -71,9 +80,8 @@ services:
     profiles: [ "migrate" ]
     env_file: .env
     depends_on:
-      - db
+      - cinema_db
     volumes:
-      - ./proj.db:/app/proj.db
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
     command: [ "poetry", "run", "alembic", "upgrade", "head" ]
@@ -83,29 +91,28 @@ services:
   # docker compose --profile async up -d
   additional_db:
     image: redis:7
-    container_name: redis_theater
-    profiles: ["async"]
+    container_name: redis_cinema
     ports:
       - "6379:6379"
 
   celery:
     build: .
-    container_name: celery_theater
-    profiles: ["async"]
+    container_name: celery_cinema
     env_file: .env
     depends_on:
       - additional_db
-      - db
-    command: ["sh", "-c", "echo 'Celery not configured yet' && sleep infinity"]
+      - cinema_db
+    command: [ "poetry", "run", "celery", "-A", "src.config.celery_app:celery_instance", "worker", "--loglevel=info" ]
+    volumes:
+      - ./src:/app/src
 
   celery-beat:
     build: .
-    container_name: celery_beat_theater
-    profiles: ["async"]
+    container_name: celery_beat_cinema
     env_file: .env
     depends_on:
       - additional_db
-    command: ["sh", "-c", "echo 'Celery beat not configured yet' && sleep infinity"]
+    command: [ "sh", "-c", "echo 'Celery beat not configured yet' && sleep infinity" ]
 
 volumes:
   postgres_data:

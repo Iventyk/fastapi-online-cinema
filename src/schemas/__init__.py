@@ -4,6 +4,11 @@ from src.schemas.accounts import (
     UserReadSchema,
     UserLoginSchema,
     LoginResponseSchema,
+    CommonResponseSchema,
+    ChangePasswordSchema,
+    ResetPasswordRequestSchema,
+    ForgotPasswordSchema,
+    AdminOperatedData,
 )
 
 from src.schemas.movies import (
@@ -21,6 +26,11 @@ from src.schemas.shopping_cart import (
     CartItemCreateSchema,
     MovieInCartSchema,
 )
+from src.schemas.profile import (
+    ProfileCreateSchema,
+    ProfileReadSchema,
+    ProfileUpdateSchema,
+)
 
 from src.schemas.favorites import (
     FavoriteRead,
@@ -32,6 +42,11 @@ __all__ = [
     "UserReadSchema",
     "UserLoginSchema",
     "LoginResponseSchema",
+    "CommonResponseSchema",
+    "ChangePasswordSchema",
+    "ForgotPasswordSchema",
+    "ResetPasswordRequestSchema",
+    "AdminOperatedData",
     "MovieCreate",
     "MovieUpdate",
     "MovieListItem",
@@ -44,4 +59,7 @@ __all__ = [
     "CartItemCreateSchema",
     "MovieInCartSchema",
     "FavoriteRead",
+    "ProfileCreateSchema",
+    "ProfileReadSchema",
+    "ProfileUpdateSchema",
 ]
