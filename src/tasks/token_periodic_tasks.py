@@ -8,24 +8,23 @@ from src.config.celery_app import celery_instance
 from src.config import get_settings
 from src.databases.models import (
     TokenBaseModel,
-    ActivationTokenModel, PasswordResetTokenModel, RefreshTokenModel,
+    ActivationTokenModel,
+    PasswordResetTokenModel,
+    RefreshTokenModel,
 )
 
 settings = get_settings()
 
 
 async def _remove_expired_tokens(
-        token_type: type[TokenBaseModel],
-):
+    token_type: type[TokenBaseModel],
+) -> None:
     local_engine = create_async_engine(
-        url=settings.DATABASE_URL,
-        poolclass=NullPool
+        url=settings.DATABASE_URL, poolclass=NullPool
     )
 
     LocalSession = async_sessionmaker(
-        bind=local_engine,
-        autoflush=False,
-        expire_on_commit=False
+        bind=local_engine, autoflush=False, expire_on_commit=False
     )
 
     async with LocalSession() as db:
@@ -39,19 +38,21 @@ async def _remove_expired_tokens(
             await db.commit()
 
             print(
-                f"--- [CLEANUP SUCCESS] Table '{table_name}': Deleted {result.rowcount} tokens. ---")
+                f"--- [CLEANUP SUCCESS] Table '{table_name}': Deleted {result} tokens. ---"
+            )
         except Exception as e:
             await db.rollback()
             print(
-                f"--- [CLEANUP ERROR] Failed for {token_type.__name__}: {e} ---")
+                f"--- [CLEANUP ERROR] Failed for {token_type.__name__}: {e} ---"
+            )
             raise e
         finally:
             await db.close()
             await local_engine.dispose()
 
 
-@celery_instance.task(name="remove_expired_activation_tokens_task")
-def remove_expired_activation_tokens_task():
+@celery_instance.task(name="remove_expired_activation_tokens_task")  # type: ignore[untyped-decorator]
+def remove_expired_activation_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session
     Remove expired email activation tokens
@@ -59,15 +60,15 @@ def remove_expired_activation_tokens_task():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        return loop.run_until_complete(_remove_expired_tokens(
-            token_type=ActivationTokenModel
-        ))
+        return loop.run_until_complete(
+            _remove_expired_tokens(token_type=ActivationTokenModel)
+        )
     finally:
         loop.close()
 
 
-@celery_instance.task(name="remove_expired_reset_tokens_task")
-def remove_expired_reset_tokens_task():
+@celery_instance.task(name="remove_expired_reset_tokens_task")  # type: ignore[untyped-decorator]
+def remove_expired_reset_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session
     Remove expired email tokens for resets passwords
@@ -75,14 +76,15 @@ def remove_expired_reset_tokens_task():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        return loop.run_until_complete(_remove_expired_tokens(
-            token_type=PasswordResetTokenModel
-        ))
+        return loop.run_until_complete(
+            _remove_expired_tokens(token_type=PasswordResetTokenModel)
+        )
     finally:
         loop.close()
 
-@celery_instance.task(name="remove_expired_refresh_tokens_task")
-def remove_expired_refresh_tokens_task():
+
+@celery_instance.task(name="remove_expired_refresh_tokens_task")  # type: ignore[untyped-decorator]
+def remove_expired_refresh_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session
     Remove expired refresh tokens
@@ -90,8 +92,8 @@ def remove_expired_refresh_tokens_task():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        return loop.run_until_complete(_remove_expired_tokens(
-            token_type=RefreshTokenModel
-        ))
+        return loop.run_until_complete(
+            _remove_expired_tokens(token_type=RefreshTokenModel)
+        )
     finally:
         loop.close()

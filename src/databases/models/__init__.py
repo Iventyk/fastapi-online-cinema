@@ -3,7 +3,7 @@ from src.databases.models.accounts import (
     UserGroupModel,
     UserModel,
     UserProfileModel,
-TokenBaseModel,
+    TokenBaseModel,
     ActivationTokenModel,
     PasswordResetTokenModel,
     RefreshTokenModel,

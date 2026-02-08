@@ -10,7 +10,7 @@ from src.schemas.accounts import (
     ForgotPasswordSchema,
     AdminOperatedData,
     RefreshTokenSchema,
-    RefreshTokenResponseSchema
+    RefreshTokenResponseSchema,
 )
 
 from src.schemas.movies import (

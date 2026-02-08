@@ -21,4 +21,4 @@ class StripeGateway(PaymentGatewayInterface):
             metadata=metadata,
             automatic_payment_methods={"enabled": True},
         )
-        return intent
+        return intent  # type: ignore[no-any-return]

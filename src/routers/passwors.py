@@ -36,14 +36,14 @@ password_router = APIRouter(prefix="/password", tags=["Password management"])
     response_model=CommonResponseSchema,
     summary="Change current password",
     description="Updates the password for the currently authenticated user. "
-                "Requires the old password for verification."
+    "Requires the old password for verification.",
 )
 @limiter.limit("1/minute")
 async def change_account_password(
-        request: Request, # noqa
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        new_password: ChangePasswordSchema,
+    request: Request,  # noqa
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    new_password: ChangePasswordSchema,
 ) -> CommonResponseSchema:
     try:
         result = await change_password(
@@ -67,15 +67,14 @@ async def change_account_password(
     response_model=CommonResponseSchema,
     summary="Request password reset",
     description="Triggers a password reset process by sending a temporary "
-                "secure token to the user's email."
+    "secure token to the user's email.",
 )
 @limiter.limit("1/minute")
 async def reset_password(
-        request: Request, # noqa
-        data: ForgotPasswordSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    request: Request,  # noqa
+    data: ForgotPasswordSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
 ) -> CommonResponseSchema:
     return await do_pswd_restore_request(
         email=data.email,
@@ -89,13 +88,13 @@ async def reset_password(
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
     summary="Confirm password reset",
-    description="Sets a new password using a secure token received via email."
+    description="Sets a new password using a secure token received via email.",
 )
 @limiter.limit("1/minute")
 async def confirm_reset_password(
-        request: Request, # noqa
-        data: ResetPasswordRequestSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    request: Request,  # noqa
+    data: ResetPasswordRequestSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
     try:
         return await do_pswd_reset_confirm(data=data, db=db)

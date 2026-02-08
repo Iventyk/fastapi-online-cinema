@@ -100,5 +100,6 @@ class AdminOperatedData(BaseModel):
 class RefreshTokenSchema(BaseModel):
     refresh_token: str
 
+
 class RefreshTokenResponseSchema(BaseModel):
     access_token: str
