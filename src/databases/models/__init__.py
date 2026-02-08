@@ -27,6 +27,8 @@ from src.databases.models.orders import (
 
 from src.databases.models.favorites import Favorite
 
+from src.databases.models.movie_reactions import MovieReaction
+
 __all__ = [
     "UserGroupEnum",
     "UserGroupModel",
@@ -40,6 +42,7 @@ __all__ = [
     "Director",
     "Certification",
     "Movie",
+    "MovieReaction",
     "Cart",
     "CartItem",
     "StatusEnum",
