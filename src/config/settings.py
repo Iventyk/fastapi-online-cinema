@@ -54,6 +54,10 @@ class BaseAppSettings(BaseSettings):
         default="theater-storage", validation_alias="MINIO_STORAGE"
     )
 
+    # Stripe
+    STRIPE_API_KEY: str
+    STRIPE_WEBHOOK_SECRET: str
+
 
 class Settings(BaseAppSettings):
     POSTGRES_USER: str = "test_user"
