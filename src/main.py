@@ -5,8 +5,11 @@ from typing import AsyncIterator
 from fastapi import FastAPI, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
+from src.config.limiter import limiter
 from src.databases import Base
 from src.databases.dev_engine import AsyncSessionLocal, engine
 from src.databases.populate import seed_groups
@@ -29,6 +32,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 
 app.include_router(api_v1_router)
