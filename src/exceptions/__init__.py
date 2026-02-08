@@ -13,6 +13,7 @@ from src.exceptions.shopping_cart import (
 )
 from src.exceptions.movies import (
     MovieDoesNotExist,
+    MovieAlreadyPurchased,
 )
 from src.exceptions.security import (
     TokenExpiredError,
@@ -20,6 +21,12 @@ from src.exceptions.security import (
 )
 from src.exceptions.payment import (
     RepeatPurchaseNotAllowed,
+)
+from src.exceptions.orders import (
+    OrderNotFound,
+    OrderCancellationNotPossible,
+    PendingOrderExists,
+    OrderAlreadyPaid,
 )
 
 __all__ = [
@@ -34,6 +41,11 @@ __all__ = [
     "CartItemAlreadyExist",
     "CartItemDoesNotExist",
     "MovieDoesNotExist",
+    "MovieAlreadyPurchased",
     "RepeatPurchaseNotAllowed",
     "CartItemsDoesNotExist",
+    "OrderNotFound",
+    "OrderCancellationNotPossible",
+    "PendingOrderExists",
+    "OrderAlreadyPaid",
 ]
