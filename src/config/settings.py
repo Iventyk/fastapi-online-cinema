@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, computed_field
 
 
 class BaseAppSettings(BaseSettings):
@@ -15,52 +15,100 @@ class BaseAppSettings(BaseSettings):
     )
 
     BASE_DIR: Path = Path(__file__).parent.parent
-    PATH_TO_DB: str = str(BASE_DIR / "database" / "source" / "theater.db")
-    PATH_TO_MOVIES_CSV: str = str(
-        BASE_DIR / "database" / "seed_data" / "imdb_movies.csv"
-    )
-
-    DEV_DATABASE_URL: str
+    ENVIRONMENT: str = "local"
     API_V1_PREFIX: str = "/api/v1"
-    DEV_SYNC_DATABASE_URL: str
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"sqlite+aiosqlite:///{self.BASE_DIR}/bbc_cinema.db"
+
+    PATH_TO_DB: str = str(BASE_DIR / "src" / "bbc_cinema.db")
+
+    @property
+    def PATH_TO_MOVIES_CSV(self) -> str:
+        return str(
+            self.BASE_DIR / "database" / "seed_data" / "imdb_movies.csv"
+        )
+
+    PATH_TO_EMAIL_TEMPLATES_DIR: str = str(
+        BASE_DIR / "notifications" / "templates"
+    )
+    ACTIVATION_EMAIL_TEMPLATE_NAME: str = "activation_request.html"
+    ACTIVATION_COMPLETE_EMAIL_TEMPLATE_NAME: str = "activation_complete.html"
+    PASSWORD_RESET_TEMPLATE_NAME: str = "password_reset_request.html"
+    PASSWORD_RESET_COMPLETE_TEMPLATE_NAME: str = "password_reset_complete.html"
 
     ACTIVATE_TOKEN_DAYS: int = 1
     RESET_TOKEN_DURATION: int = 1
     REFRESH_TOKEN_DAYS: int = 7
     ACCESS_KEY_TIMEDELTA_MINUTES: int = 60
 
-    SECRET_KEY_ACCESS: str
-    SECRET_KEY_REFRESH: str
-    JWT_SIGNING_ALGORITHM: str
+    SECRET_KEY_ACCESS: str = "placeholder_access"
+    SECRET_KEY_REFRESH: str = "placeholder_refresh"
+    JWT_SIGNING_ALGORITHM: str = "HS256"
 
-    EMAIL_HOST: str = "host"
-    EMAIL_PORT: int = 25
-    EMAIL_HOST_USER: str = "testuser"
-    EMAIL_HOST_PASSWORD: str = "test_password"
-    EMAIL_USE_TLS: bool = False
+    EMAIL_HOST: str = Field(
+        default="mailhog_cinema", validation_alias="EMAIL_HOST"
+    )
+    EMAIL_PORT: int = Field(default=1025, validation_alias="EMAIL_PORT")
+    EMAIL_HOST_USER: str = Field(
+        default="bbc_cinema", validation_alias="EMAIL_HOST_USER"
+    )
+    EMAIL_HOST_PASSWORD: str = Field(
+        default="bbc_cinema_password", validation_alias="EMAIL_HOST_PASSWORD"
+    )
+    EMAIL_USE_TLS: bool = Field(
+        default=False, validation_alias="EMAIL_USE_TLS"
+    )
     MAILHOG_API_PORT: int = 8025
 
+    REDIS_HOST: str = Field(
+        default="additional_db", validation_alias="REDIS_HOST"
+    )
+    REDIS_PORT: int = Field(default=6379, validation_alias="REDIS_PORT")
+
     S3_STORAGE_HOST: str = Field(
-        default="minio-theater", validation_alias="MINIO_HOST"
+        default="minio-cinema", validation_alias="MINIO_HOST"
     )
     S3_STORAGE_PORT: int = Field(default=9000, validation_alias="MINIO_PORT")
     S3_STORAGE_ACCESS_KEY: str = Field(
         default="minioadmin", validation_alias="MINIO_ROOT_USER"
     )
     S3_STORAGE_SECRET_KEY: str = Field(
-        default="some_password", validation_alias="MINIO_ROOT_PASSWORD"
+        default="bbc_cinema_password", validation_alias="MINIO_ROOT_PASSWORD"
     )
     S3_BUCKET_NAME: str = Field(
-        default="theater-storage", validation_alias="MINIO_STORAGE"
+        default="ddc-cinema-storage", validation_alias="MINIO_STORAGE"
     )
+    # Stripe
+    STRIPE_API_KEY: str = Field(default="", validation_alias="STRIPE_API_KEY")
+    STRIPE_WEBHOOK_SECRET: str = Field(
+        default="", validation_alias="STRIPE_WEBHOOK_SECRET"
+    )
+
+    @property
+    def S3_STORAGE_ENDPOINT(self) -> str:
+        return f"http://{self.S3_STORAGE_HOST}:{self.S3_STORAGE_PORT}"
+
+
+class LocalSettings(BaseAppSettings):
+    """DEV_SETTINGS: Local SQLite"""
+
+    ENVIRONMENT: str = "local"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return "sqlite+aiosqlite:///bbc_cinema.db"
 
 
 class Settings(BaseAppSettings):
-    POSTGRES_USER: str = "test_user"
-    POSTGRES_PASSWORD: str = "test_password"
-    POSTGRES_HOST: str = "test_host"
+    ENVIRONMENT: str = "docker"
+
+    POSTGRES_USER: Optional[str] = os.getenv("POSTGRES_USER")
+    POSTGRES_PASSWORD: Optional[str] = os.getenv("POSTGRES_PASSWORD")
+    POSTGRES_HOST: Optional[str] = os.getenv("POSTGRES_HOST")
     POSTGRES_DB_PORT: int = 5432
-    POSTGRES_DB: str = "test_db"
+    POSTGRES_DB: Optional[str] = os.getenv("POSTGRES_DB")
 
     SECRET_KEY_ACCESS: str = Field(
         default_factory=lambda: os.getenv(
@@ -74,16 +122,31 @@ class Settings(BaseAppSettings):
     )
     JWT_SIGNING_ALGORITHM: str = "HS256"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DATABASE_URL(self) -> str:
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}"
+            f":{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}"
+            f":{self.POSTGRES_DB_PORT}/{self.POSTGRES_DB}"
+        )
+
 
 class TestingSettings(BaseAppSettings):
-    SECRET_KEY_ACCESS: str = "SECRET_KEY_ACCESS"
-    SECRET_KEY_REFRESH: str = "SECRET_KEY_REFRESH"
+    """TEST_SETTINGS: SQLite in-memory"""
+
+    ENVIRONMENT: str = "test"
+
+    SECRET_KEY_ACCESS: str = "test_secret"
+    SECRET_KEY_REFRESH: str = "test_secret"
     JWT_SIGNING_ALGORITHM: str = "HS256"
 
-    def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
-        object.__setattr__(self, "PATH_TO_DB", ":memory:")
-        object.__setattr__(
-            self,
-            "PATH_TO_MOVIES_CSV",
-            str(self.BASE_DIR / "database" / "seed_data" / "test_data.csv"),
-        )
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def DATABASE_URL(self) -> str:
+        return "sqlite+aiosqlite:///:memory:"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def PATH_TO_MOVIES_CSV(self) -> str:
+        return str(self.BASE_DIR / "database" / "seed_data" / "test_data.csv")

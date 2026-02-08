@@ -156,6 +156,87 @@ Tokens are time-limited
 Cascade deletion ensures cleanup when a user is removed
 ```
 
+## Shopping Cart Module Overview
+**StatusEnum** - Defines the lifecycle of an order. Used in the Shopping Cart module to validate purchase history before adding items (preventing duplicate purchases).
+```
+PENDING – payment is in progress
+PAID – movie is already purchased (cannot be added to cart again)
+CANCELED – transaction failed
+```
+**Shopping Cart Models:**
+
+**Cart** - Represents a user's storage for movies.
+```
+Fields:
+id – primary key
+user_id – unique foreign key to users
+
+Relationships:
+One-to-one with UserModel (Cart.user)
+One-to-many with CartItemModel (Cart.items)
+
+Notes:
+Automatically created for the user if it doesn't exist during item addition.
+Strictly one cart per user.
+```
+**CartItem** - Represents a specific movie added to a cart.
+```
+Fields:
+id – primary key
+cart_id – foreign key to carts
+movie_id – foreign key to movies
+
+Relationships:
+Many-to-one with CartModel
+Many-to-one with MovieModel
+
+Notes:
+Acts as a link between the user's cart and the movie catalog.
+Includes validation to prevent duplicate items in the same cart.
+```
+**Validation** - The module enforces strict rules to ensure data integrity and security.
+```
+1. User Validation:
+   - Ensures the user exists before any operation.
+   - Function: validate_user(user_id)
+
+2. Role-Based Access Control (RBAC):
+   - Users can only access/modify their own carts.
+   - Moderators and Admins have elevated permissions to view/clear/extend any user's cart.
+   - Function: validate_user_permission(...)
+
+3. Movie Availability:
+   - Checks if the requested movie exists in the database.
+   - Function: validate_movie(movie_id)
+
+4. Cross-Module Purchase Validation (Relation to Orders):
+   - Before adding a movie to the cart, the system checks the Order history.
+   - Prevents adding a movie if it is already in a PAID or PENDING order.
+   - Function: validate_movie_purchase_status(...)
+```
+
+**Business Logic && Cart Services**
+
+Function - `sync_guest_cart_to_user` - Handles the transition of shopping cart data from a guest session (local storage/cookies) to the persistent database when a user logs in or registers.
+
+Trigger Points:
+```
+- Successful Registration
+- Successful Login
+```
+Workflow:
+```
+1. Validation: Checks if any movie IDs were passed from the guest session.
+2. Cart Retrieval: Fetches the user's persistent cart from the database.
+   - Auto-creation: If the user has no cart, a new one is created immediately.
+3. Smart Merge (Deduplication):
+   - Identifies movies already present in the user's database cart.
+   - Calculates the difference: `Movies to Add = Guest IDs - Existing DB IDs`.
+   - Prevents duplicate entries for the same movie.
+4. Persistence: Bulk inserts the new items into the `cart_items` table and commits the transaction.
+
+Goal: ensures a seamless user experience where items added before authentication are not lost.
+```
 ## Run with Docker
 
 ### 1. Create `.env`

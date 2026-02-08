@@ -3,7 +3,7 @@ from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from src.databases.models import Cart, CartItem
+from src.databases.models import Cart, CartItem, Order, OrderItem, StatusEnum
 
 
 async def sync_guest_cart_to_user(
@@ -24,14 +24,32 @@ async def sync_guest_cart_to_user(
         cart = Cart(user_id=user_id)
         db.add(cart)
         await db.flush()
-        existing_movie_ids = set()
+        existing_cart_ids = set()
     else:
-        existing_movie_ids = {item.movie_id for item in cart.items}
+        existing_cart_ids = {item.movie_id for item in cart.items}
 
-    movies_to_add = set(guest_movie_ids) - existing_movie_ids
+    candidate_ids = set(guest_movie_ids) - existing_cart_ids
 
-    for movie_id in movies_to_add:
+    if not candidate_ids:
+        return
+
+    purchased_query = (
+        select(OrderItem.movie_id)
+        .join(Order)
+        .where(
+            Order.user_id == user_id,
+            Order.status.in_([StatusEnum.PAID, StatusEnum.PENDING]),
+            OrderItem.movie_id.in_(candidate_ids),
+        )
+    )
+    purchased_result = await db.execute(purchased_query)
+    purchased_ids = set(purchased_result.scalars().all())
+
+    final_movies_to_add = candidate_ids - purchased_ids
+
+    for movie_id in final_movies_to_add:
         new_item = CartItem(cart_id=cart.id, movie_id=movie_id)
         db.add(new_item)
 
-    await db.commit()
+    if final_movies_to_add:
+        await db.commit()

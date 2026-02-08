@@ -3,8 +3,11 @@ from src.exceptions.accounts import (
     UserAlreadyExist,
     UserGroupNotExist,
     UserNotExist,
-    UserPermissionDenied,
     IncorrectCredentials,
+    UserAccountNotActivated,
+    UserAlreadyActivated,
+    UserNotActivated,
+    UserPermissionDenied,
 )
 from src.exceptions.shopping_cart import (
     CartItemAlreadyExist,
@@ -15,12 +18,17 @@ from src.exceptions.movies import (
     MovieDoesNotExist,
     MovieAlreadyPurchased,
 )
+from src.exceptions.payment import (
+    RepeatPurchaseNotAllowed,
+)
 from src.exceptions.security import (
     TokenExpiredError,
     InvalidTokenError,
+    PasswordChangeError,
 )
-from src.exceptions.payment import (
-    RepeatPurchaseNotAllowed,
+from src.exceptions.profile import (
+    ProfileAlreadyExistsException,
+    ProfileDoesNotExistException,
 )
 from src.exceptions.orders import (
     OrderNotFound,
@@ -28,24 +36,48 @@ from src.exceptions.orders import (
     PendingOrderExists,
     OrderAlreadyPaid,
 )
+from src.exceptions.storages import (
+    S3PermissionError,
+    S3ConnectionError,
+    S3FileNotFoundError,
+    S3BucketNotFoundError,
+    S3FileUploadError,
+    BaseS3Error,
+)
+from src.exceptions.email import BaseEmailError
 
 __all__ = [
     "BaseAccountException",
     "UserAlreadyExist",
     "UserGroupNotExist",
-    "UserNotExist",
-    "UserPermissionDenied",
-    "IncorrectCredentials",
     "TokenExpiredError",
     "InvalidTokenError",
-    "CartItemAlreadyExist",
-    "CartItemDoesNotExist",
+    "UserPermissionDenied",
+    "UserNotExist",
+    "IncorrectCredentials",
+    "UserAccountNotActivated",
+    "UserAlreadyActivated",
+    "UserNotActivated",
+    "PasswordChangeError",
+    "ProfileAlreadyExistsException",
+    "ProfileDoesNotExistException",
     "MovieDoesNotExist",
     "MovieAlreadyPurchased",
     "RepeatPurchaseNotAllowed",
+    "CartItemAlreadyExist",
+    "CartItemDoesNotExist",
     "CartItemsDoesNotExist",
     "OrderNotFound",
     "OrderCancellationNotPossible",
     "PendingOrderExists",
     "OrderAlreadyPaid",
+    # storage errors
+    "S3PermissionError",
+    "S3ConnectionError",
+    "S3FileNotFoundError",
+    "S3BucketNotFoundError",
+    "S3FileUploadError",
+    "BaseS3Error",
+    # email errors
+    "BaseEmailError",
 ]

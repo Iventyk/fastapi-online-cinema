@@ -12,13 +12,30 @@ from src.config.settings import Settings
 
 from src.config import get_settings
 from src.databases.models import (
-    UserModel,
     UserGroupModel,
+    UserModel,
     UserProfileModel,
     ActivationTokenModel,
-    RefreshTokenModel,
     PasswordResetTokenModel,
+    RefreshTokenModel,
+    Genre,
+    Star,
+    Director,
+    Certification,
+    Movie,
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
 )  # noqa
+from src.databases.models.movies import (
+    Movie,
+    Genre,
+    Star,
+    Director,
+    Certification,
+)
+from src.databases.models.favorites import Favorite
 from src.databases import Base
 
 settings = get_settings()
@@ -31,7 +48,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", settings.DEV_DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 
 # add your model's MetaData object here

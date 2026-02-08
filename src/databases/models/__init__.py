@@ -25,6 +25,8 @@ from src.databases.models.orders import (
     OrderItem,
 )
 
+from src.databases.models.favorites import Favorite
+
 __all__ = [
     "UserGroupEnum",
     "UserGroupModel",
@@ -43,6 +45,7 @@ __all__ = [
     "StatusEnum",
     "Order",
     "OrderItem",
+    "Favorite",
     "Payment",
     "PaymentItem",
 ]
