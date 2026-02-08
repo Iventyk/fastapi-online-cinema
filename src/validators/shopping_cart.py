@@ -31,9 +31,7 @@ async def validate_user(
 
     user = await db.get(UserModel, user_id)
     if not user:
-        raise UserNotExist(
-            message="User which cart you're trying extend does not exist"
-        )
+        raise UserNotExist(message="User not found.")
 
 
 async def validate_user_permission(
@@ -48,7 +46,7 @@ async def validate_user_permission(
         or authenticated_user.permission == groups.ADMIN.name
     )  # noqa
     if authenticated_user.user_id != user_id and not has_permission:
-        raise UserPermissionDenied("Not enough permission")
+        raise UserPermissionDenied("Not enough permission.")
 
 
 async def validate_movie(db: AsyncSession, movie_id: int) -> "Movie":
@@ -63,7 +61,7 @@ async def validate_movie(db: AsyncSession, movie_id: int) -> "Movie":
     movie = movie_result.scalar_one_or_none()
 
     if not movie:
-        raise MovieDoesNotExist("Movie not found")
+        raise MovieDoesNotExist("Movie not found.")
     return movie
 
 
