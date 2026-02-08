@@ -41,11 +41,39 @@ class UserCreateSchema(UserBaseSchema):
             raise
 
 
+class ChangePasswordSchema(BaseModel):
+    old_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        validate_password(password=v)
+        return v
+
+
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequestSchema(BaseModel):
+    token: str
+    email: EmailStr
+    password: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        validate_password(password=v)
+        return v
+
+
 class UserReadSchema(UserBaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     is_active: bool
+    permission: UserGroupEnum | None = None
 
 
 class UserLoginSchema(BaseModel):
@@ -58,3 +86,12 @@ class LoginResponseSchema(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+
+
+class CommonResponseSchema(BaseModel):
+    message: str
+
+
+class AdminOperatedData(BaseModel):
+    activation: bool = False
+    permission: UserGroupEnum | None = None

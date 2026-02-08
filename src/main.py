@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
@@ -10,6 +11,11 @@ from src.databases import Base
 from src.databases.dev_engine import AsyncSessionLocal, engine
 from src.databases.populate import seed_groups
 from src.routers import api_v1_router
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 
 @asynccontextmanager
