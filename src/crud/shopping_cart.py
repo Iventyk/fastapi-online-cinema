@@ -88,7 +88,7 @@ async def remove_cart_item(
     cart = result_cart.scalar_one_or_none()
 
     if not cart:
-        raise CartItemDoesNotExist("Cart not found")
+        raise CartItemDoesNotExist("Cart item does not exist")
 
     query_item = select(CartItem).where(
         CartItem.id == cart_item_id, CartItem.cart_id == cart.id
@@ -97,9 +97,7 @@ async def remove_cart_item(
     item = result_item.scalar_one_or_none()
 
     if not item:
-        raise CartItemDoesNotExist(
-            "Cart item does not exist in this user's cart"
-        )
+        raise CartItemDoesNotExist("Cart item does not exist")
 
     await db.delete(item)
     await db.commit()
