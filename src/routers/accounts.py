@@ -1,35 +1,28 @@
 from typing import Annotated
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Request
 from fastapi.params import Depends
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.crud import (
     create_new_user,
-    get_list_of_users,
     login_user,
     logout_user,
-    do_pswd_restore_request,
     activate_user,
     reactivate_user_token,
-    change_password,
-    do_pswd_reset_confirm,
-    manual_operation, refresh_token,
+    refresh_token,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, Settings, get_settings
-from src.databases.models import UserGroupEnum
 from src.exceptions import (
     BaseAccountException,
     IncorrectCredentials,
     TokenExpiredError,
     InvalidTokenError,
     UserNotExist,
-    UserAccountNotActivated,
+
     UserNotActivated,
-    PasswordChangeError,
-    UserGroupNotExist,
 )
 from src.schemas import (
     UserReadSchema,
@@ -38,27 +31,26 @@ from src.schemas import (
     LoginResponseSchema,
     CommonResponseSchema,
     CurrentUser,
-    ChangePasswordSchema,
-    ResetPasswordRequestSchema,
-    ForgotPasswordSchema,
-    AdminOperatedData,
     RefreshTokenResponseSchema,
     RefreshTokenSchema
 )
 from src.securuty import JWTAuthManagerInterface
-from src.services import sync_guest_cart_to_user
 from src.securuty.utils import get_current_user
+from src.config.limiter import limiter
 
-account_router = APIRouter(prefix="/accounts")
+auth_router = APIRouter(prefix="/accounts", tags=["Auth"])
 
 
-@account_router.post(
+@auth_router.post(
     "/register/",
     status_code=status.HTTP_201_CREATED,
     response_model=UserReadSchema,
-    tags=["Auth"],
+    summary="Register a new user",
+    description="Create a new account and trigger an activation email."
 )
+@limiter.limit("5/minute")
 async def create_account(
+        request: Request,  # noqa
         db: Annotated[AsyncSession, Depends(get_db)],
         jwt_manager: Annotated[
             JWTAuthManagerInterface, Depends(get_jwt_manager)],
@@ -76,13 +68,16 @@ async def create_account(
         )
 
 
-@account_router.post(
+@auth_router.post(
     "/login/",
     status_code=status.HTTP_200_OK,
     response_model=LoginResponseSchema,
-    tags=["Auth"],
+    summary="User Login",
+    description="Authenticate user and return access and refresh tokens."
 )
+@limiter.limit("5/minute")
 async def login_for_accounts(
+        request: Request,  # noqa
         db: Annotated[AsyncSession, Depends(get_db)],
         jwt_manager: Annotated[
             JWTAuthManagerInterface, Depends(get_jwt_manager)],
@@ -107,13 +102,16 @@ async def login_for_accounts(
         )
 
 
-@account_router.get(
+@auth_router.get(
     "/logout/",
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
-    tags=["Auth"],
+    summary="Logout User",
+    description="Invalidate the user's current session and refresh token."
 )
+@limiter.limit("10/minute")
 async def logout_account(
+        request: Request,  # noqa
         db: Annotated[AsyncSession, Depends(get_db)],
         auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CommonResponseSchema:
@@ -132,16 +130,20 @@ async def logout_account(
         )
 
 
-@account_router.post(
+@auth_router.post(
     "/refresh-token/",
     status_code=status.HTTP_200_OK,
     response_model=RefreshTokenResponseSchema,
-    tags=["Auth"],
+    summary="Refresh Access Token",
+    description="Get a new access token using a valid refresh token."
 )
+@limiter.limit("5/minute")
 async def refresh_account_token(
-    token: RefreshTokenSchema,
-    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
-    settings: Annotated[Settings, Depends(get_settings)],
+        request: Request,  # noqa
+        token: RefreshTokenSchema,
+        jwt_manager: Annotated[
+            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+        settings: Annotated[Settings, Depends(get_settings)],
 ) -> RefreshTokenResponseSchema:
     try:
         return await refresh_token(
@@ -156,39 +158,16 @@ async def refresh_account_token(
         )
 
 
-@account_router.get(
-    "/",
-    status_code=status.HTTP_200_OK,
-    response_model=list[UserReadSchema],
-    tags=["Account management"],
-)
-async def get_accounts(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-) -> list[UserReadSchema]:
-    if auth_user.permission not in ["moderator", "admin"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Incorrect permission for current user",
-        )
-    try:
-        result = await get_list_of_users(
-            db=db,
-        )
-        return result
-    except Exception as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
-        )
-
-
-@account_router.get(
+@auth_router.get(
     "/activate/",
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
-    tags=["Account management"],
+    summary="Activate Account",
+    description="Verify email and activate user account via token."
 )
+@limiter.limit("1/minute")
 async def activate_account(
+        request: Request,  # noqa
         activation_token: str,
         db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
@@ -209,13 +188,16 @@ async def activate_account(
         )
 
 
-@account_router.post(
+@auth_router.post(
     "/reactivate-account/",
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
-    tags=["Account management"],
+    summary="Resend Activation Email",
+    description="Request a new activation token if the previous one expired."
 )
+@limiter.limit("1/minute")
 async def reactivate_account(
+        request: Request,  # noqa
         user_data: UserLoginSchema,
         db: Annotated[AsyncSession, Depends(get_db)],
         jwt_manager: Annotated[
@@ -227,96 +209,3 @@ async def reactivate_account(
         jwt_manager=jwt_manager,
     )
     return result
-
-@account_router.post(
-    "/manual-operate/{account_id}/",
-    status_code=status.HTTP_200_OK,
-    response_model=UserReadSchema,
-    tags=["Account management"],
-)
-async def manual_operate_account(
-        account_id: int,
-        account_data: AdminOperatedData,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-) -> UserReadSchema:
-    if auth_user.permission != UserGroupEnum.ADMIN:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You are not allowed to perform this action",
-        )
-    else:
-        try:
-            return await manual_operation(
-                account_id=account_id,
-                data=account_data,
-                db=db,
-            )
-        except (UserNotExist, UserGroupNotExist) as error:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=str(error)
-            )
-
-
-@account_router.post(
-    "/change_password/",
-    status_code=status.HTTP_200_OK,
-    response_model=CommonResponseSchema,
-    tags=["Password management"],
-)
-async def change_account_password(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        new_password: ChangePasswordSchema,
-) -> CommonResponseSchema:
-    try:
-        result = await change_password(
-            db=db, auth_user=auth_user, new_password=new_password
-        )
-        return result
-    except PasswordChangeError as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
-        )
-    except UserNotExist:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect provided JWT Token or it expired",
-        )
-
-
-@account_router.post(
-    "/password-reset/",
-    status_code=status.HTTP_200_OK,
-    response_model=CommonResponseSchema,
-    tags=["Password management"],
-)
-async def reset_password(
-        data: ForgotPasswordSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-) -> CommonResponseSchema:
-    return await do_pswd_restore_request(
-        email=data.email,
-        db=db,
-        jwt_manager=jwt_manager,
-    )
-
-
-@account_router.post(
-    "/reset-password/confirm/",
-    status_code=status.HTTP_200_OK,
-    response_model=CommonResponseSchema,
-    tags=["Password management"],
-)
-async def confirm_reset_password(
-        data: ResetPasswordRequestSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-) -> CommonResponseSchema:
-    try:
-        return await do_pswd_reset_confirm(data=data, db=db)
-    except (IncorrectCredentials, UserNotExist) as error:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
-        )
