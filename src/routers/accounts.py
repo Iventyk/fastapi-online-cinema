@@ -21,7 +21,6 @@ from src.exceptions import (
     TokenExpiredError,
     InvalidTokenError,
     UserNotExist,
-
     UserNotActivated,
 )
 from src.schemas import (
@@ -32,7 +31,7 @@ from src.schemas import (
     CommonResponseSchema,
     CurrentUser,
     RefreshTokenResponseSchema,
-    RefreshTokenSchema
+    RefreshTokenSchema,
 )
 from src.securuty import JWTAuthManagerInterface
 from src.securuty.utils import get_current_user
@@ -46,15 +45,14 @@ auth_router = APIRouter(prefix="/accounts", tags=["Auth"])
     status_code=status.HTTP_201_CREATED,
     response_model=UserReadSchema,
     summary="Register a new user",
-    description="Create a new account and trigger an activation email."
+    description="Create a new account and trigger an activation email.",
 )
 @limiter.limit("5/minute")
 async def create_account(
-        request: Request,  # noqa
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-        user_data: UserCreateSchema,
+    request: Request,  # noqa
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    user_data: UserCreateSchema,
 ) -> UserReadSchema:
     try:
         return await create_new_user(
@@ -73,16 +71,15 @@ async def create_account(
     status_code=status.HTTP_200_OK,
     response_model=LoginResponseSchema,
     summary="User Login",
-    description="Authenticate user and return access and refresh tokens."
+    description="Authenticate user and return access and refresh tokens.",
 )
 @limiter.limit("5/minute")
 async def login_for_accounts(
-        request: Request,  # noqa
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-        settings: Annotated[Settings, Depends(get_settings)],
-        login_data: UserLoginSchema,
+    request: Request,  # noqa
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    login_data: UserLoginSchema,
 ) -> LoginResponseSchema:
     try:
         result = await login_user(
@@ -107,13 +104,13 @@ async def login_for_accounts(
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
     summary="Logout User",
-    description="Invalidate the user's current session and refresh token."
+    description="Invalidate the user's current session and refresh token.",
 )
 @limiter.limit("10/minute")
 async def logout_account(
-        request: Request,  # noqa
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    request: Request,  # noqa
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CommonResponseSchema:
     try:
         result = await logout_user(db=db, auth_user=auth_user)
@@ -135,15 +132,14 @@ async def logout_account(
     status_code=status.HTTP_200_OK,
     response_model=RefreshTokenResponseSchema,
     summary="Refresh Access Token",
-    description="Get a new access token using a valid refresh token."
+    description="Get a new access token using a valid refresh token.",
 )
 @limiter.limit("5/minute")
 async def refresh_account_token(
-        request: Request,  # noqa
-        token: RefreshTokenSchema,
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-        settings: Annotated[Settings, Depends(get_settings)],
+    request: Request,  # noqa
+    token: RefreshTokenSchema,
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> RefreshTokenResponseSchema:
     try:
         return await refresh_token(
@@ -163,13 +159,13 @@ async def refresh_account_token(
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
     summary="Activate Account",
-    description="Verify email and activate user account via token."
+    description="Verify email and activate user account via token.",
 )
 @limiter.limit("1/minute")
 async def activate_account(
-        request: Request,  # noqa
-        activation_token: str,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    request: Request,  # noqa
+    activation_token: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
     try:
         result = await activate_user(
@@ -193,15 +189,14 @@ async def activate_account(
     status_code=status.HTTP_200_OK,
     response_model=CommonResponseSchema,
     summary="Resend Activation Email",
-    description="Request a new activation token if the previous one expired."
+    description="Request a new activation token if the previous one expired.",
 )
 @limiter.limit("1/minute")
 async def reactivate_account(
-        request: Request,  # noqa
-        user_data: UserLoginSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    request: Request,  # noqa
+    user_data: UserLoginSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
 ) -> CommonResponseSchema:
     result = await reactivate_user_token(
         db=db,

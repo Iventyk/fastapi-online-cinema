@@ -28,7 +28,9 @@ from src.schemas import (
     LoginResponseSchema,
     CurrentUser,
     CommonResponseSchema,
-    AdminOperatedData, RefreshTokenSchema, RefreshTokenResponseSchema,
+    AdminOperatedData,
+    RefreshTokenSchema,
+    RefreshTokenResponseSchema,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
@@ -42,10 +44,9 @@ from src.tasks import (
 
 
 async def create_new_user(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-        user_data: UserCreateSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    user_data: UserCreateSchema,
 ) -> UserReadSchema:
     existing_user = await get_user_by_email(db=db, email=user_data.email)
 
@@ -104,8 +105,8 @@ async def create_new_user(
 
 
 async def get_user_by_email(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        email: EmailStr,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    email: EmailStr,
 ) -> UserModel | None:
     result = await db.execute(
         select(UserModel)
@@ -118,9 +119,9 @@ async def get_user_by_email(
 
 
 async def get_list_of_users(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        skip: int = 0,
-        limit: int = 25,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: int = 0,
+    limit: int = 25,
 ) -> list[UserReadSchema]:
     result = await db.scalars(
         select(UserModel)
@@ -133,11 +134,10 @@ async def get_list_of_users(
 
 
 async def login_user(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
-        settings: Annotated[Settings, Depends(get_settings)],
-        login_data: UserLoginSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    login_data: UserLoginSchema,
 ) -> LoginResponseSchema:
     email = login_data.email
     user = await get_user_by_email(db=db, email=email)
@@ -185,8 +185,8 @@ async def login_user(
 
 
 async def activate_user(
-        activation_token: str,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    activation_token: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
     stmt = (
         select(ActivationTokenModel)
@@ -207,8 +207,8 @@ async def activate_user(
         return CommonResponseSchema(message="User already activated")
 
     if (
-            token_record.expires_at.timestamp()
-            < datetime.now(timezone.utc).timestamp()
+        token_record.expires_at.timestamp()
+        < datetime.now(timezone.utc).timestamp()
     ):
         raise IncorrectCredentials(message="Activation token has expired")
 
@@ -228,10 +228,9 @@ async def activate_user(
 
 
 async def reactivate_user_token(
-        user_data: UserLoginSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    user_data: UserLoginSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
 ) -> CommonResponseSchema:
     user = await get_user_by_email(db=db, email=user_data.email)
 
@@ -275,8 +274,8 @@ async def reactivate_user_token(
 
 
 async def logout_user(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CommonResponseSchema:
     stmt = delete(RefreshTokenModel).where(
         RefreshTokenModel.user_id == auth_user.user_id
@@ -291,9 +290,9 @@ async def logout_user(
 
 
 async def manual_operation(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        data: AdminOperatedData,
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    data: AdminOperatedData,
 ) -> UserReadSchema:
     account_to_operate = await db.get(
         UserModel, account_id, options=[joinedload(UserModel.group)]
@@ -324,11 +323,9 @@ async def manual_operation(
 
 
 async def refresh_token(
-        token: RefreshTokenSchema,
-        jwt_manager: Annotated[
-            JWTAuthManagerInterface, Depends(get_jwt_manager)
-        ],
-        settings: Annotated[Settings, Depends(get_settings)],
+    token: RefreshTokenSchema,
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> RefreshTokenResponseSchema:
     payload = jwt_manager.decode_refresh_token(token.refresh_token)
 
@@ -346,6 +343,4 @@ async def refresh_token(
         expires_delta=timedelta(minutes=settings.ACCESS_KEY_TIMEDELTA_MINUTES),
     )
 
-    return RefreshTokenResponseSchema(
-        access_token=new_token
-    )
+    return RefreshTokenResponseSchema(access_token=new_token)

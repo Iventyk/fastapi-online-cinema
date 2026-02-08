@@ -5,10 +5,7 @@ from fastapi.params import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config.limiter import limiter
-from src.crud import (
-    get_list_of_users,
-    manual_operation
-)
+from src.crud import get_list_of_users, manual_operation
 from src.databases import get_db
 from src.databases.models import UserGroupEnum
 from src.exceptions import (
@@ -30,13 +27,14 @@ account_router = APIRouter(prefix="/accounts", tags=["Accounts management"])
     status_code=status.HTTP_200_OK,
     response_model=list[UserReadSchema],
     summary="Get all accounts",
-    description="Retrieve a list of all registered users. Access restricted to Moderators and Admins."
+    description="Retrieve a list of all registered users. "
+    "Access restricted to Moderators and Admins.",
 )
 @limiter.limit("20/minute")
 async def get_accounts(
-        request: Request,  # noqa
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    request: Request,  # noqa
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[UserReadSchema]:
     if auth_user.permission not in ["moderator", "admin"]:
         raise HTTPException(
@@ -59,15 +57,16 @@ async def get_accounts(
     status_code=status.HTTP_200_OK,
     response_model=UserReadSchema,
     summary="Manual account operation",
-    description="Update account status or group manually. Access restricted to Admins only."
+    description="Update account status or group manually. "
+    "Access restricted to Admins only.",
 )
 @limiter.limit("20/minute")
 async def manual_operate_account(
-        request: Request,  # noqa
-        account_id: int,
-        account_data: AdminOperatedData,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    request: Request,  # noqa
+    account_id: int,
+    account_data: AdminOperatedData,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> UserReadSchema:
     if auth_user.permission != UserGroupEnum.ADMIN:
         raise HTTPException(
