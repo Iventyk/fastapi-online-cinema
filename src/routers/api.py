@@ -9,6 +9,7 @@ from src.routers.stars import router as stars_router
 from src.routers.directors import router as directors_router
 from src.routers.payments import payment_router
 from src.routers.webhooks import webhooks_router
+from src.routers.orders import order_router
 
 api_v1_router = APIRouter()
 
@@ -21,3 +22,4 @@ api_v1_router.include_router(directors_router)
 api_v1_router.include_router(payment_router)
 api_v1_router.include_router(webhooks_router)
 api_v1_router.include_router(shopping_cart_router)
+api_v1_router.include_router(order_router)

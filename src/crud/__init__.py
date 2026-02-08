@@ -25,6 +25,12 @@ from src.crud.profile import (
     retrieve_user_profile,
     update_user_profile,
 )
+from src.crud.orders import (
+    create_order,
+    get_user_orders,
+    cancel_order,
+    get_all_orders_admin,
+)
 
 __all__ = [
     "create_new_user",
@@ -41,6 +47,10 @@ __all__ = [
     "remove_cart_item",
     "get_cart",
     "clear_cart",
+    "create_order",
+    "get_user_orders",
+    "cancel_order",
+    "get_all_orders_admin",
     "get_purchased_items",
     "create_user_profile",
     "retrieve_user_profile",

@@ -26,6 +26,11 @@ from src.schemas.shopping_cart import (
     CartItemCreateSchema,
     MovieInCartSchema,
 )
+from src.schemas.orders import (
+    OrderCreateSchema,
+    OrderReadSchema,
+    OrderCreateResponseSchema,
+)
 from src.schemas.profile import (
     ProfileCreateSchema,
     ProfileReadSchema,
@@ -62,4 +67,7 @@ __all__ = [
     "ProfileCreateSchema",
     "ProfileReadSchema",
     "ProfileUpdateSchema",
+    "OrderCreateSchema",
+    "OrderReadSchema",
+    "OrderCreateResponseSchema",
 ]
