@@ -24,9 +24,8 @@ from src.databases.models.orders import (
     Order,
     OrderItem,
 )
-
 from src.databases.models.favorites import Favorite
-
+from src.databases.models.movie_comments import MovieComment
 from src.databases.models.movie_reactions import MovieReaction
 
 __all__ = [
@@ -43,6 +42,7 @@ __all__ = [
     "Certification",
     "Movie",
     "MovieReaction",
+    "MovieComment",
     "Cart",
     "CartItem",
     "StatusEnum",
