@@ -80,6 +80,11 @@ class BaseAppSettings(BaseSettings):
     S3_BUCKET_NAME: str = Field(
         default="ddc-cinema-storage", validation_alias="MINIO_STORAGE"
     )
+    # Stripe
+    STRIPE_API_KEY: str = Field(default="", validation_alias="STRIPE_API_KEY")
+    STRIPE_WEBHOOK_SECRET: str = Field(
+        default="", validation_alias="STRIPE_WEBHOOK_SECRET"
+    )
 
     @property
     def S3_STORAGE_ENDPOINT(self) -> str:
