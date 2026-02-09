@@ -56,10 +56,10 @@ def test_get_s3_storage_client_initialization() -> None:
     with patch("aioboto3.Session") as mocked_session:
         client = get_storage(settings=mock_settings)
 
-        assert client._endpoint_url == "http://localhost:9000"
-        assert client._access_key == "test_access_key"
-        assert client._secret_key == "test_secret_key"
-        assert client._bucket_name == "test_bucket"
+        assert client._endpoint_url == "http://localhost:9000"  # type: ignore[attr-defined]
+        assert client._access_key == "test_access_key"  # type: ignore[attr-defined]
+        assert client._secret_key == "test_secret_key"  # type: ignore[attr-defined]
+        assert client._bucket_name == "test_bucket"  # type: ignore[attr-defined]
 
         mocked_session.assert_called_once_with(
             aws_access_key_id="test_access_key",
@@ -76,7 +76,7 @@ app.dependency_overrides[get_accounts_email_notificator] = (
 )
 
 
-def test_get_accounts_email_notificator_initialization():
+def test_get_accounts_email_notificator_initialization() -> None:
     mock_settings = MagicMock()
     mock_settings.EMAIL_HOST = "smtp.gmail.com"
     mock_settings.EMAIL_PORT = 587

@@ -9,6 +9,7 @@ exclude =
     venv,
     alembic/
     src/tasks/
+    src/tests/
     __pycache__
 extend-exclude =
     database/migrations/*
