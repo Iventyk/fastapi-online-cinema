@@ -20,7 +20,7 @@ class OrderCreateSchema(OrderBaseSchema):
 
     @field_validator("movie_ids")
     @classmethod
-    def check_not_empty(cls, v: int) -> int | None:
+    def check_not_empty(cls, v: List[int]) -> List[int] | None:
         if not v:
             raise ValueError("Order must contain at least one movie ID")
         return v
@@ -46,3 +46,11 @@ class OrderReadSchema(OrderBaseSchema):
 
 class OrderStatusUpdateSchema(BaseModel):
     status: StatusEnum
+
+
+class OrderCreateResponseSchema(BaseModel):
+    order: OrderReadSchema
+    removed_purchased: List[int] = []
+    removed_unavailable: List[int] = []
+    removed_pending: List[int] = []
+    message: Optional[str] = None

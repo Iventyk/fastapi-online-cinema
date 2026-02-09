@@ -1,7 +1,11 @@
 from typing import Annotated
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import (
+    OAuth2PasswordBearer,
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -12,14 +16,17 @@ from src.securuty import JWTAuthManagerInterface
 from src.config import get_jwt_manager
 from src.databases import get_db
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/accounts/login/")
+security_scheme = HTTPBearer()
 
 
 async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
-    token: Annotated[str, Depends(oauth2_scheme)],
+    # token: Annotated[str, Depends(oauth2_scheme)],
+    auth: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
     jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
 ) -> CurrentUser:
+    token = auth.credentials
     try:
         user_data = jwt_manager.decode_access_token(token)
 
