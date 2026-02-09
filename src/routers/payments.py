@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases import get_db
@@ -9,21 +9,23 @@ from src.services.payment import create_payment_for_order, get_user_payment_hist
 from src.securuty.utils import get_current_user, CurrentUser
 from src.tasks.email_tasks import send_payment_success_email_task
 from src.databases.models import UserGroupEnum
-from src.notifications.emails import EmailSender
 
 payment_router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
-@payment_router.get("/admin", response_model=list[PaymentReadSchema])
+@payment_router.get(
+    "/admin",
+    response_model=list[PaymentReadSchema],
+    summary="Get all payments (Admin only)",
+    description="Retrieve all payments in the system. You can optionally filter by user ID or payment status. Admin privileges required.",
+    response_description="List of payments"
+)
 async def get_all_user_payments(
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-    user_id: int | None = None,
-    status: str | None = None,
+    user_id: int | None = Query(None, description="Filter payments by user ID"),
+    status: str | None = Query(None, description="Filter payments by status (e.g., 'successful', 'canceled')")
 ) -> list[PaymentReadSchema]:
-    """
-    Get all payments (admin only) with optional filters.
-    """
     if auth_user.permission != UserGroupEnum.ADMIN:
         raise HTTPException(status_code=403, detail="Admin privileges required")
 
@@ -35,7 +37,13 @@ async def get_all_user_payments(
     return payments
 
 
-@payment_router.post("/{order_id}", response_model=PaymentCreateResponseSchema)
+@payment_router.post(
+    "/{order_id}",
+    response_model=PaymentCreateResponseSchema,
+    summary="Create payment for an order",
+    description="Create a new payment for the specified order. Sends a confirmation email upon successful creation.",
+    response_description="Client secret for Stripe payment"
+)
 async def create_payment(
     order_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -56,13 +64,16 @@ async def create_payment(
     return PaymentCreateResponseSchema(client_secret=client_secret)
 
 
-@payment_router.get("/", response_model=list[PaymentReadSchema])
+@payment_router.get(
+    "/",
+    response_model=list[PaymentReadSchema],
+    summary="Get current user's payments",
+    description="Retrieve the payment history for the currently authenticated user.",
+    response_description="List of payments for the current user"
+)
 async def get_my_payments(
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> list[PaymentReadSchema]:
-    """
-    Get all payments for the current user.
-    """
     payments = await get_user_payment_history(db=db, user_id=auth_user.id)
     return payments
