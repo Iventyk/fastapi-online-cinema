@@ -29,6 +29,8 @@ from src.schemas import (
     CurrentUser,
     CommonResponseSchema,
     AdminOperatedData,
+    RefreshTokenSchema,
+    RefreshTokenResponseSchema,
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
@@ -318,3 +320,27 @@ async def manual_operation(
         is_active=account_to_operate.is_active,
         permission=account_to_operate.group.name,
     )
+
+
+async def refresh_token(
+    token: RefreshTokenSchema,
+    jwt_manager: Annotated[JWTAuthManagerInterface, Depends(get_jwt_manager)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> RefreshTokenResponseSchema:
+    payload = jwt_manager.decode_refresh_token(token.refresh_token)
+
+    user_id = payload.get("user_id")
+    email = payload.get("email")
+
+    if not user_id or not email:
+        raise IncorrectCredentials(message="Invalid token credentials")
+
+    new_token = jwt_manager.create_access_token(
+        data={
+            "user_id": user_id,
+            "email": email,
+        },
+        expires_delta=timedelta(minutes=settings.ACCESS_KEY_TIMEDELTA_MINUTES),
+    )
+
+    return RefreshTokenResponseSchema(access_token=new_token)
