@@ -13,7 +13,7 @@ async def stripe_webhook(request: Request) -> dict[str, str]:
     signature = request.headers.get("Stripe-Signature")
 
     try:
-        stripe.Webhook.construct_event(  # type: ignore[no-untyped-call]
+        stripe.Webhook.construct_event(
             payload=payload,
             sig_header=signature,
             secret=settings.STRIPE_WEBHOOK_SECRET,
