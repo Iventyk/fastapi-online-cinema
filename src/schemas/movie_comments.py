@@ -1,5 +1,4 @@
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict
 
 
 class CommentCreate(BaseModel):
@@ -11,5 +10,4 @@ class CommentRead(BaseModel):
     text: str
     user_id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -1,12 +1,11 @@
-from typing import Dict
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.dev_engine import get_db
-from src.databases.models.movie_reactions import MovieReaction
+from src.schemas.movie_reactions import MovieReactionRead
 from src.securuty.utils import get_current_user
 from src.databases.models.accounts import UserModel
+from src.crud import movie_reactions as crud
 
 router = APIRouter(prefix="/movies", tags=["Movie reactions"])
 
@@ -17,7 +16,12 @@ async def like_movie(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
 ) -> None:
-    await _set_reaction(db, user.id, movie_id, value=1)
+    await crud.set_reaction(
+        db,
+        user_id=user.id,
+        movie_id=movie_id,
+        value=1,
+    )
 
 
 @router.post("/{movie_id}/dislike", status_code=status.HTTP_201_CREATED)
@@ -26,7 +30,12 @@ async def dislike_movie(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
 ) -> None:
-    await _set_reaction(db, user.id, movie_id, value=-1)
+    await crud.set_reaction(
+        db,
+        user_id=user.id,
+        movie_id=movie_id,
+        value=-1,
+    )
 
 
 @router.delete("/{movie_id}/reaction", status_code=status.HTTP_204_NO_CONTENT)
@@ -35,70 +44,33 @@ async def remove_reaction(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),
 ) -> None:
-    result = await db.execute(
-        select(MovieReaction).where(
-            MovieReaction.user_id == user.id,
-            MovieReaction.movie_id == movie_id,
-        )
+    deleted = await crud.remove_reaction(
+        db,
+        user_id=user.id,
+        movie_id=movie_id,
     )
-    reaction = result.scalar_one_or_none()
 
-    if not reaction:
+    if not deleted:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Reaction not found",
         )
 
-    await db.delete(reaction)
-    await db.commit()
 
-
-@router.get("/{movie_id}/reactions")
+@router.get(
+    "/{movie_id}/reactions",
+    response_model=MovieReactionRead,
+)
 async def get_movie_reactions(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
-) -> Dict[str, int]:
-    stmt = select(
-        func.sum(func.case((MovieReaction.value == 1, 1), else_=0)).label(
-            "likes"
-        ),
-        func.sum(func.case((MovieReaction.value == -1, 1), else_=0)).label(
-            "dislikes"
-        ),
-    ).where(MovieReaction.movie_id == movie_id)
-
-    result = await db.execute(stmt)
-    row = result.one()
-
-    return {
-        "likes": row.likes or 0,
-        "dislikes": row.dislikes or 0,
-    }
-
-
-async def _set_reaction(
-    db: AsyncSession,
-    user_id: int,
-    movie_id: int,
-    value: int,
-) -> None:
-    result = await db.execute(
-        select(MovieReaction).where(
-            MovieReaction.user_id == user_id,
-            MovieReaction.movie_id == movie_id,
-        )
+) -> MovieReactionRead:
+    likes, dislikes = await crud.get_reactions_stats(
+        db,
+        movie_id=movie_id,
     )
-    reaction = result.scalar_one_or_none()
 
-    if reaction:
-        reaction.value = value
-    else:
-        db.add(
-            MovieReaction(
-                user_id=user_id,
-                movie_id=movie_id,
-                value=value,
-            )
-        )
-
-    await db.commit()
+    return MovieReactionRead(
+        likes=likes,
+        dislikes=dislikes,
+    )
