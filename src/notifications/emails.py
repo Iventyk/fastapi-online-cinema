@@ -6,7 +6,10 @@ import aiosmtplib
 from jinja2 import Environment, FileSystemLoader
 
 from src.exceptions import BaseEmailError
-from src.notifications.interfaces import EmailSenderInterface, PaymentEmailSenderInterface
+from src.notifications.interfaces import (
+    EmailSenderInterface,
+    PaymentEmailSenderInterface,
+)
 
 
 class EmailSender(EmailSenderInterface):
@@ -148,7 +151,15 @@ class EmailSender(EmailSenderInterface):
 
 class PaymentEmailSender(PaymentEmailSenderInterface):
 
-    def __init__(self, hostname: str, port: int, email: str, password: str, use_tls: bool, template_dir: str):
+    def __init__(
+        self,
+        hostname: str,
+        port: int,
+        email: str,
+        password: str,
+        use_tls: bool,
+        template_dir: str,
+    ):
         self._hostname = hostname
         self._port = port
         self._email = email
@@ -156,14 +167,20 @@ class PaymentEmailSender(PaymentEmailSenderInterface):
         self._use_tls = use_tls
         self._env = Environment(loader=FileSystemLoader(template_dir))
 
-    async def _send_email(self, recipient: str, subject: str, html_content: str) -> None:
+    async def _send_email(
+        self, recipient: str, subject: str, html_content: str
+    ) -> None:
         message = MIMEMultipart()
         message["From"] = self._email
         message["To"] = recipient
         message["Subject"] = subject
         message.attach(MIMEText(html_content, "html"))
         try:
-            smtp = aiosmtplib.SMTP(hostname=self._hostname, port=self._port, start_tls=self._use_tls)
+            smtp = aiosmtplib.SMTP(
+                hostname=self._hostname,
+                port=self._port,
+                start_tls=self._use_tls,
+            )
             await smtp.connect()
             if self._use_tls:
                 await smtp.starttls()
@@ -171,8 +188,12 @@ class PaymentEmailSender(PaymentEmailSenderInterface):
             await smtp.sendmail(self._email, [recipient], message.as_string())
             await smtp.quit()
         except aiosmtplib.SMTPException as error:
-            logging.error(f"Failed to send payment email to {recipient}: {error}")
-            raise BaseEmailError(f"Failed to send payment email to {recipient}: {error}")
+            logging.error(
+                f"Failed to send payment email to {recipient}: {error}"
+            )
+            raise BaseEmailError(
+                f"Failed to send payment email to {recipient}: {error}"
+            )
 
     async def send_payment_success_email(
         self,
@@ -191,11 +212,11 @@ class PaymentEmailSender(PaymentEmailSenderInterface):
     async def send_payment_failed_email(
         self,
         email: str,
+        amount: float,
         order_id: int,
     ) -> None:
         subject = "Payment failed"
         html_content = (
-            f"<p>Your payment has failed.</p>"
-            f"<p>Order ID: {order_id}</p>"
+            f"<p>Your payment has failed.</p>" f"<p>Order ID: {order_id}</p>"
         )
         await self._send_email(email, subject, html_content)

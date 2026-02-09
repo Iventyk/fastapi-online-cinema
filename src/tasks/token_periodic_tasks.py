@@ -51,7 +51,7 @@ async def _remove_expired_tokens(
             await local_engine.dispose()
 
 
-@celery_instance.task(name="remove_expired_activation_tokens_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="remove_expired_activation_tokens_task")
 def remove_expired_activation_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session
@@ -67,7 +67,7 @@ def remove_expired_activation_tokens_task() -> None:
         loop.close()
 
 
-@celery_instance.task(name="remove_expired_reset_tokens_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="remove_expired_reset_tokens_task")
 def remove_expired_reset_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session
@@ -83,7 +83,7 @@ def remove_expired_reset_tokens_task() -> None:
         loop.close()
 
 
-@celery_instance.task(name="remove_expired_refresh_tokens_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="remove_expired_refresh_tokens_task")
 def remove_expired_refresh_tokens_task() -> None:
     """
     Isolated sync coverage for async task with own db session

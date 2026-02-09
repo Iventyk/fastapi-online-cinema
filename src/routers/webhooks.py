@@ -25,10 +25,14 @@ async def stripe_webhook(
 
     try:
         event = stripe.Webhook.construct_event(
-            payload=payload, sig_header=signature, secret=settings.STRIPE_WEBHOOK_SECRET
+            payload=payload,
+            sig_header=signature,
+            secret=settings.STRIPE_WEBHOOK_SECRET,
         )
     except stripe.error.SignatureVerificationError:
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    await handle_stripe_webhook(db=db, event=event, email_service=email_service)
+    await handle_stripe_webhook(
+        db=db, event=event, email_service=email_service
+    )
     return {"status": "ok"}

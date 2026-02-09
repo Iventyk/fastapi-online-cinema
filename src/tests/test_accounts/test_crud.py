@@ -17,7 +17,7 @@ from src.databases.models import UserGroupEnum
 
 
 @pytest.mark.asyncio
-async def test_create_new_user_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_create_new_user_success(mocker) -> None:
     user_data = MagicMock()
     user_data.email = "test@example.com"
     user_data.guest_cart_items = [1, 2]
@@ -73,7 +73,7 @@ async def test_create_new_user_success(mocker) -> None:  # type: ignore[no-untyp
 
 
 @pytest.mark.asyncio
-async def test_get_user_by_email_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_get_user_by_email_success(mocker) -> None:
     db = AsyncMock(spec=AsyncSession)
     email = "test@example.com"
 
@@ -93,7 +93,7 @@ async def test_get_user_by_email_success(mocker) -> None:  # type: ignore[no-unt
 
 
 @pytest.mark.asyncio
-async def test_get_list_of_users_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_get_list_of_users_success(mocker) -> None:
     db = AsyncMock(spec=AsyncSession)
     skip, limit = 0, 10
 
@@ -123,7 +123,7 @@ async def test_get_list_of_users_success(mocker) -> None:  # type: ignore[no-unt
 
 
 @pytest.mark.asyncio
-async def test_login_user_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_login_user_success(mocker) -> None:
     login_data = MagicMock()
     login_data.email = "test@example.com"
     login_data.password = "correct_password"
@@ -178,7 +178,7 @@ async def test_login_user_success(mocker) -> None:  # type: ignore[no-untyped-de
 
 
 @pytest.mark.asyncio
-async def test_activate_user_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_activate_user_success(mocker) -> None:
     db = AsyncMock(spec=AsyncSession)
     token_str = "valid_token"
 
@@ -217,7 +217,7 @@ async def test_activate_user_success(mocker) -> None:  # type: ignore[no-untyped
 
 
 @pytest.mark.asyncio
-async def test_reactivate_user_token_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_reactivate_user_token_success(mocker) -> None:
     user_data = MagicMock()
     user_data.email = "test@example.com"
     user_data.password = "password123"
@@ -251,7 +251,7 @@ async def test_reactivate_user_token_success(mocker) -> None:  # type: ignore[no
 
 
 @pytest.mark.asyncio
-async def test_logout_user(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_logout_user(mocker) -> None:
     db = AsyncMock(spec=AsyncSession)
     auth_user = MagicMock()
     auth_user.user_id = 99
@@ -266,7 +266,7 @@ async def test_logout_user(mocker) -> None:  # type: ignore[no-untyped-def]
 
 
 @pytest.mark.asyncio
-async def test_manual_operation_update_permission(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_manual_operation_update_permission(mocker) -> None:
     db = AsyncMock(spec=AsyncSession)
     data = MagicMock()
     data.activation = True
@@ -292,7 +292,7 @@ async def test_manual_operation_update_permission(mocker) -> None:  # type: igno
 
 
 @pytest.mark.asyncio
-async def test_refresh_token_success(mocker) -> None:  # type: ignore[no-untyped-def]
+async def test_refresh_token_success(mocker) -> None:
     token_schema = MagicMock()
     token_schema.refresh_token = "valid_refresh_token"
 

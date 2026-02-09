@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 from typing import Annotated, Any, Sequence
 
 from fastapi import Depends, HTTPException
@@ -8,13 +8,16 @@ from sqlalchemy.orm import selectinload
 
 from src.databases import get_db
 from src.databases.models.orders import Order, StatusEnum
-from src.databases.models.payment import Payment, PaymentItem, PaymentStatusEnum
+from src.databases.models.payment import Payment, PaymentStatusEnum
 from src.gateways.stripe_gateway import StripeGateway
-from src.repositories.payment import create_payment, update_payment_status, get_payment_by_external_id
+from src.repositories.payment import (
+    create_payment,
+    update_payment_status,
+    get_payment_by_external_id,
+)
 from src.repositories.payment_item import create_payment_item
 from src.exceptions.payments import OrderNotPayable
 from src.notifications.emails import EmailSender
-
 
 MIN_CHARGE_USD = Decimal("0.50")
 
@@ -26,10 +29,9 @@ async def create_payment_for_order(
     order_id: int,
 ) -> tuple[str, Payment]:
     """
-    Create a Stripe payment intent for an order, save payment and payment items.
-    Email confirmation is sent asynchronously via Celery task, not here.
+    Create a Stripe payment intent for an order, save payment and payment items
+    Email confirmation is sent asynchronously via Celery task, not here
     """
-    # Отримати замовлення з товарами
     result = await db.execute(
         select(Order)
         .options(selectinload(Order.items))
@@ -40,18 +42,19 @@ async def create_payment_for_order(
     if not order or order.status != StatusEnum.PENDING:
         raise OrderNotPayable("Order cannot be paid")
 
-    # Порахувати загальну суму замовлення
-    total_amount = sum((item.price_at_order for item in order.items), Decimal("0.00"))
+    total_amount = sum(
+        (item.price_at_order for item in order.items), Decimal("0.00")
+    )
 
     if total_amount < MIN_CHARGE_USD:
         raise ValueError(
             f"Total amount ${total_amount} is below the minimum charge for USD"
         )
 
-    # Конвертувати у центи та округлити до цілого
-    amount_in_cents = int((total_amount * 100).quantize(Decimal("1"), rounding=ROUND_DOWN))
+    amount_in_cents = int(
+        (total_amount * 100).quantize(Decimal("1"), rounding=ROUND_DOWN)
+    )
 
-    # Створити Stripe payment intent
     stripe_gateway = StripeGateway()
     intent = await stripe_gateway.create_payment_intent(
         amount=amount_in_cents,
@@ -59,7 +62,6 @@ async def create_payment_for_order(
         metadata={"order_id": str(order.id), "user_id": str(user_id)},
     )
 
-    # Зберегти Payment у базі
     payment = await create_payment(
         db=db,
         user_id=user_id,
@@ -68,7 +70,6 @@ async def create_payment_for_order(
         external_payment_id=intent["id"],
     )
 
-    # Зберегти Payment Items
     for item in order.items:
         await create_payment_item(
             db=db,
@@ -77,7 +78,6 @@ async def create_payment_for_order(
             price_at_payment=item.price_at_order,
         )
 
-    # Оновити статус замовлення
     order.status = StatusEnum.PAID
     await db.commit()
 
@@ -85,7 +85,10 @@ async def create_payment_for_order(
 
 
 async def handle_stripe_webhook(
-    *, db: Annotated[AsyncSession, Depends(get_db)], event: dict[str, Any], email_service: EmailSender
+    *,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    event: dict[str, Any],
+    email_service: EmailSender,
 ) -> None:
     """
     Handle Stripe webhook events to update Payment and Order status.
@@ -93,24 +96,33 @@ async def handle_stripe_webhook(
     payment_id = event.get("data", {}).get("object", {}).get("id")
     status = event.get("type")
 
-    payment = await get_payment_by_external_id(db=db, external_payment_id=payment_id)
+    payment = await get_payment_by_external_id(
+        db=db, external_payment_id=payment_id
+    )
     if not payment:
         raise HTTPException(status_code=404, detail="Payment not found")
 
     if status == "payment_intent.succeeded":
-        await update_payment_status(db=db, payment=payment, status=PaymentStatusEnum.SUCCESSFUL)
+        await update_payment_status(
+            db=db, payment=payment, status=PaymentStatusEnum.SUCCESSFUL
+        )
         payment.order.status = StatusEnum.PAID
         await db.commit()
 
-        # Send email confirmation
         await email_service._send_email(
             recipient=payment.user.email,
             subject="Payment Successful",
-            html_content=f"<p>Your payment of ${payment.amount} for order #{payment.order_id} was successful.</p>"
+            html_content=f"<p>Your payment of ${payment.amount} "
+            f"for order #{payment.order_id} was successful.</p>",
         )
 
-    elif status in ("payment_intent.canceled", "payment_intent.payment_failed"):
-        await update_payment_status(db=db, payment=payment, status=PaymentStatusEnum.CANCELED)
+    elif status in (
+        "payment_intent.canceled",
+        "payment_intent.payment_failed",
+    ):
+        await update_payment_status(
+            db=db, payment=payment, status=PaymentStatusEnum.CANCELED
+        )
         payment.order.status = StatusEnum.CANCELLED
         await db.commit()
 
@@ -121,13 +133,17 @@ async def get_user_payment_history(
     """
     Retrieve all payments for a user.
     """
-    result = await db.execute(select(Payment).where(Payment.user_id == user_id))
+    result = await db.execute(
+        select(Payment).where(Payment.user_id == user_id)
+    )
     return result.scalars().all()
 
 
 async def get_all_payments(
-    *, db: Annotated[AsyncSession, Depends(get_db)], user_id: int | None = None,
-    status: PaymentStatusEnum | None = None
+    *,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    user_id: int | None = None,
+    status: PaymentStatusEnum | None = None,
 ) -> Sequence[Payment]:
     """
     Retrieve all payments with optional filters (admin use).

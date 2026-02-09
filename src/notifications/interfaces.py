@@ -58,17 +58,21 @@ class EmailSenderInterface(ABC):
         pass
 
 
-class PaymentEmailSenderInterface(ABC):
+class PaymentEmailSenderInterface(EmailSenderInterface, ABC):
 
     @abstractmethod
-    async def send_payment_success_email(self, email: str, amount: float, order_id: int) -> None:
+    async def send_payment_success_email(
+        self, email: str, amount: float, order_id: int
+    ) -> None:
         """
         Send email confirming successful payment.
         """
         pass
 
     @abstractmethod
-    async def send_payment_failed_email(self, email: str, amount: float, order_id: int) -> None:
+    async def send_payment_failed_email(
+        self, email: str, amount: float, order_id: int
+    ) -> None:
         """
         Send email notifying about failed payment.
         """
