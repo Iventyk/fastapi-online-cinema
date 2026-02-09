@@ -52,8 +52,6 @@ warn_unused_ignores = true          # Warn if ignore comments are unused
 warn_return_any = false              # Ignore functions returning Any
 no_implicit_optional = true          # Do not automatically make types Optional
 strict_equality = false              # Do not require strict type checks for == and !=
-ignore_errors = false
-allow_redefinition = true
 exclude = '''
 /(
   | migrations
