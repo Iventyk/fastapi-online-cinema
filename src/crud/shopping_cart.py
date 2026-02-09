@@ -1,7 +1,7 @@
 from typing import Annotated, List
 
 from fastapi import Depends
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession

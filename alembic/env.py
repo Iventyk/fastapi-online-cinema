@@ -34,6 +34,7 @@ from src.databases.models.movies import (
     Star,
     Director,
     Certification,
+    Rating
 )
 from src.databases.models.favorites import Favorite
 from src.databases import Base

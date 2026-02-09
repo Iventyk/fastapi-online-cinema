@@ -1,7 +1,8 @@
 from typing import List, Optional
+from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class GenreSchema(BaseModel):
@@ -116,3 +117,24 @@ class MovieRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RateMovieSchema(BaseModel):
+    value: int = Field(..., ge=1, le=10)
+
+
+class ReadMovieRatingSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    movie_id: int
+    user_id: int
+    value: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class MovieAverageRatingSchema(BaseModel):
+    average: float
+    count: int
+    user_value: int | None

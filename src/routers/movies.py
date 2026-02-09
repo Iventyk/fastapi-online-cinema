@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Annotated
 
 from sqlalchemy import or_, asc, desc
 
@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.crud.movies import rate_movie, get_movie_rating
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import (
     Movie,
@@ -13,12 +14,17 @@ from src.databases.models.movies import (
     Star,
     Director,
 )
+from src.exceptions import MovieDoesNotExist
+from src.schemas import CurrentUser
 from src.schemas.movies import (
     MovieCreate,
     MovieUpdate,
     MovieRead,
     MovieListItem,
+    RateMovieSchema,
+    ReadMovieRatingSchema, MovieAverageRatingSchema,
 )
+from src.securuty.utils import get_current_user
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
@@ -239,3 +245,55 @@ async def delete_movie(
 
     await db.delete(movie)
     await db.commit()
+
+
+@router.post(
+    "/{movie_id}/rating",
+    response_model=ReadMovieRatingSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Rate movie",
+    description="Controller for change user rate on movie"
+)
+async def rate_movies(
+        movie_id: int,
+        rate_data: RateMovieSchema,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        db: AsyncSession = Depends(get_db),
+) -> ReadMovieRatingSchema:
+    try:
+        return await rate_movie(
+            movie_id=movie_id,
+            rate_data=rate_data,
+            authenticated_user=authenticated_user,
+            db=db,
+        )
+    except MovieDoesNotExist as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error)
+        )
+
+
+@router.get(
+    "/{movie_id}/rating",
+    response_model=MovieAverageRatingSchema,
+    status_code=status.HTTP_200_OK,
+    summary="Show movie rating",
+    description="get average movie rating"
+)
+async def get_movies_rating(
+        movie_id: int,
+        authenticated_user: Annotated[CurrentUser, Depends(get_current_user)],
+        db: AsyncSession = Depends(get_db),
+) -> MovieAverageRatingSchema:
+    try:
+        return await get_movie_rating(
+            movie_id=movie_id,
+            authenticated_user=authenticated_user,
+            db=db,
+        )
+    except MovieDoesNotExist as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(error)
+        )

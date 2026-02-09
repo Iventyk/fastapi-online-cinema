@@ -7,6 +7,12 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d bbc_cinema_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     ports:
       - "${POSTGRES_DB_PORT:-5432}:5432"
     volumes:
@@ -64,7 +70,7 @@ services:
       - ./alembic:/app/alembic
     depends_on:
       cinema_db:
-        condition: service_started
+        condition: service_healthy
       minio:
         condition: service_healthy
     command: >

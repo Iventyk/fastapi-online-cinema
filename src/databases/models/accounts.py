@@ -24,6 +24,7 @@ from src.securuty import hash_password, verify_password
 from src.databases.models.favorites import Favorite
 
 if TYPE_CHECKING:
+    from src.databases.models.movies import Rating
     from src.databases.models import Cart, Order, Payment
 
 
@@ -92,6 +93,12 @@ class UserModel(Base):
         "Cart",
         back_populates="user",
         uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+    ratings: Mapped[List["Rating"]] = relationship(
+        "Rating",
+        back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )

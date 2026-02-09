@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 from typing import List, Optional, TYPE_CHECKING
+from datetime import datetime
 
 from sqlalchemy import (
     Table,
@@ -11,12 +12,15 @@ from sqlalchemy import (
     ForeignKey,
     UniqueConstraint,
     DECIMAL,
+    DateTime,
+    func,
 )
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
     relationship,
 )
+
 
 from .base import Base
 from src.databases.models.favorites import Favorite
@@ -25,6 +29,7 @@ from src.databases.models.movie_comments import MovieComment
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
+    from src.databases.models import UserModel
 
 
 movie_genres = Table(
@@ -189,6 +194,9 @@ class Movie(Base):
     cart_items: Mapped[List["CartItem"]] = relationship(
         "CartItem", back_populates="movie"
     )
+    ratings_list: Mapped[List["Rating"]] = relationship(
+        "Rating", back_populates="movie", cascade="all, delete-orphan"
+    )
 
     reactions: Mapped[list["MovieReaction"]] = relationship(
         "MovieReaction",
@@ -199,4 +207,35 @@ class Movie(Base):
     comments: Mapped[list["MovieComment"]] = relationship(
         "MovieComment",
         cascade="all, delete-orphan",
+    )
+
+
+class Rating(Base):
+    __tablename__ = "ratings"
+    __table_args__ = (
+        UniqueConstraint("user_id", "movie_id", name="uq_user_movie_rating"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False
+    )
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    movie: Mapped["Movie"] = relationship("Movie", back_populates="ratings_list")
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates="ratings"
     )
