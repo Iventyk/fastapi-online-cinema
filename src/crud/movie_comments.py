@@ -30,7 +30,7 @@ async def get_movie_comments(
     result = await db.execute(
         select(MovieComment).where(MovieComment.movie_id == movie_id)
     )
-    return result.scalars().all()
+    return list(result.scalars().all())
 
 
 async def delete_comment(

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.databases.models.movies import Movie, Genre, Star, Director
 from src.schemas.movies import MovieCreate, MovieUpdate
 
+
 async def get_movies(
     db: AsyncSession,
     *,
@@ -66,7 +67,7 @@ async def get_movies(
     stmt = stmt.offset(offset).limit(per_page)
 
     result = await db.execute(stmt)
-    return result.scalars().all()
+    return list(result.scalars().all())
 
 
 async def get_movie_by_id(
@@ -74,11 +75,8 @@ async def get_movie_by_id(
     *,
     movie_id: int,
 ) -> Movie | None:
-    result = await db.execute(
-        select(Movie).where(Movie.id == movie_id)
-    )
+    result = await db.execute(select(Movie).where(Movie.id == movie_id))
     return result.scalar_one_or_none()
-
 
 
 async def create_movie(
