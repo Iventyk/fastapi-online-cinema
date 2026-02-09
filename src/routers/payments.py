@@ -4,11 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases import get_db
-from src.schemas.payment import PaymentCreateResponseSchema, PaymentReadSchema, PaymentItemReadSchema
+from src.schemas.payment import PaymentCreateResponseSchema, PaymentReadSchema
 from src.services.payment import create_payment_for_order, get_user_payment_history, get_all_payments
 from src.securuty.utils import get_current_user, CurrentUser
-from src.notifications.emails import EmailSender
+from src.tasks.email_tasks import send_payment_success_email_task
 from src.databases.models import UserGroupEnum
+from src.notifications.emails import EmailSender
 
 payment_router = APIRouter(prefix="/payments", tags=["Payments"])
 
@@ -39,14 +40,19 @@ async def create_payment(
     order_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-    email_service: EmailSender = Depends(),
-) -> PaymentCreateResponseSchema:
-    """
-    Create a payment for the given order and return client secret.
-    """
-    client_secret = await create_payment_for_order(
-        db=db, user_id=auth_user.id, order_id=order_id, email_service=email_service
+):
+    client_secret, payment = await create_payment_for_order(
+        db=db,
+        user_id=auth_user.user_id,
+        order_id=order_id,
     )
+
+    send_payment_success_email_task.delay(
+        email=auth_user.email,
+        amount=float(payment.amount),
+        order_id=payment.order_id,
+    )
+
     return PaymentCreateResponseSchema(client_secret=client_secret)
 
 

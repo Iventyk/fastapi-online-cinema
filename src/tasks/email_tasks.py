@@ -58,3 +58,11 @@ def send_password_reset_complete_email_task(
     return asyncio.run(
         email_sender.send_password_reset_complete_email(email, login_link)
     )
+
+@celery_instance.task(name="send_payment_success_email_task")  # type: ignore[untyped-decorator]
+def send_payment_success_email_task(email: str, amount: float, order_id: int) -> Any:
+    return asyncio.run(email_sender.send_payment_success_email(email, amount, order_id))
+
+@celery_instance.task(name="send_payment_failed_email_task")  # type: ignore[untyped-decorator]
+def send_payment_failed_email_task(email: str, amount: float, order_id: int) -> Any:
+    return asyncio.run(email_sender.send_payment_failed_email(email, amount, order_id))

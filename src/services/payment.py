@@ -16,36 +16,50 @@ from src.exceptions.payments import OrderNotPayable
 from src.notifications.emails import EmailSender
 
 
+MIN_CHARGE_USD = Decimal("0.50")
+
+
 async def create_payment_for_order(
     *,
-    db: Annotated[AsyncSession, Depends(get_db)],
+    db: AsyncSession,
     user_id: int,
     order_id: int,
-    email_service: EmailSender,
-) -> str:
+) -> tuple[str, Payment]:
     """
-    Create a Stripe payment intent for an order, save payment, and send email confirmation.
+    Create a Stripe payment intent for an order, save payment and payment items.
+    Email confirmation is sent asynchronously via Celery task, not here.
     """
+    # Отримати замовлення з товарами
     result = await db.execute(
         select(Order)
         .options(selectinload(Order.items))
         .where(Order.id == order_id)
     )
     order = result.scalar_one_or_none()
+
     if not order or order.status != StatusEnum.PENDING:
         raise OrderNotPayable("Order cannot be paid")
 
+    # Порахувати загальну суму замовлення
     total_amount = sum((item.price_at_order for item in order.items), Decimal("0.00"))
 
-    # Create Stripe payment intent
+    if total_amount < MIN_CHARGE_USD:
+        raise ValueError(
+            f"Total amount ${total_amount} is below the minimum charge for USD"
+        )
+
+    # Конвертувати у центи та округлити до цілого
+    amount_in_cents = int((total_amount * 100).quantize(Decimal("1"), rounding=ROUND_DOWN))
+
+    # Створити Stripe payment intent
     stripe_gateway = StripeGateway()
     intent = await stripe_gateway.create_payment_intent(
-        amount=int(total_amount * 100),  # cents
+        amount=amount_in_cents,
         currency="usd",
         metadata={"order_id": str(order.id), "user_id": str(user_id)},
     )
 
-    # Save Payment
+    # Зберегти Payment у базі
     payment = await create_payment(
         db=db,
         user_id=user_id,
@@ -54,7 +68,7 @@ async def create_payment_for_order(
         external_payment_id=intent["id"],
     )
 
-    # Save Payment Items
+    # Зберегти Payment Items
     for item in order.items:
         await create_payment_item(
             db=db,
@@ -63,18 +77,11 @@ async def create_payment_for_order(
             price_at_payment=item.price_at_order,
         )
 
-    # Commit all DB changes
+    # Оновити статус замовлення
     order.status = StatusEnum.PAID
     await db.commit()
 
-    # Send email confirmation
-    await email_service._send_email(
-        recipient=order.user.email,
-        subject="Payment Confirmation",
-        html_content=f"<p>Your payment of ${total_amount} for order #{order.id} was successful.</p>"
-    )
-
-    return intent["client_secret"]
+    return intent["client_secret"], payment
 
 
 async def handle_stripe_webhook(

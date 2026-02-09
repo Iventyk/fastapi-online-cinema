@@ -56,3 +56,20 @@ class EmailSenderInterface(ABC):
             login_link (str): The login link to include in the email.
         """
         pass
+
+
+class PaymentEmailSenderInterface(ABC):
+
+    @abstractmethod
+    async def send_payment_success_email(self, email: str, amount: float, order_id: int) -> None:
+        """
+        Send email confirming successful payment.
+        """
+        pass
+
+    @abstractmethod
+    async def send_payment_failed_email(self, email: str, amount: float, order_id: int) -> None:
+        """
+        Send email notifying about failed payment.
+        """
+        pass
