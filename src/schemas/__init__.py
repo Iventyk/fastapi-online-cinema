@@ -36,9 +36,12 @@ from src.schemas.profile import (
     ProfileReadSchema,
     ProfileUpdateSchema,
 )
-
 from src.schemas.favorites import (
     FavoriteRead,
+)
+from src.schemas.movie_comments import (
+    CommentRead,
+    CommentCreate,
 )
 
 __all__ = [
@@ -64,6 +67,8 @@ __all__ = [
     "CartItemCreateSchema",
     "MovieInCartSchema",
     "FavoriteRead",
+    "CommentRead",
+    "CommentCreate",
     "ProfileCreateSchema",
     "ProfileReadSchema",
     "ProfileUpdateSchema",

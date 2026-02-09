@@ -20,6 +20,8 @@ from sqlalchemy.orm import (
 
 from .base import Base
 from src.databases.models.favorites import Favorite
+from src.databases.models.movie_reactions import MovieReaction
+from src.databases.models.movie_comments import MovieComment
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
@@ -183,6 +185,18 @@ class Movie(Base):
         back_populates="movie",
         cascade="all, delete-orphan",
     )
+
     cart_items: Mapped[List["CartItem"]] = relationship(
         "CartItem", back_populates="movie"
+    )
+
+    reactions: Mapped[list["MovieReaction"]] = relationship(
+        "MovieReaction",
+        back_populates="movie",
+        cascade="all, delete-orphan",
+    )
+
+    comments: Mapped[list["MovieComment"]] = relationship(
+        "MovieComment",
+        cascade="all, delete-orphan",
     )
