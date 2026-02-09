@@ -119,7 +119,7 @@ async def update_user_profile(
         await s3_storage.upload_file(
             file_name=file_name,
             file_data=file_data,
-            content_type=avatar.content_type,  # type: ignore[arg-type]
+            content_type=avatar.content_type,
         )
 
         avatar_url = await s3_storage.get_file_url(file_name=file_name)
