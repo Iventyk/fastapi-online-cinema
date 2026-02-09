@@ -35,9 +35,9 @@ jobs:
       - name: Run flake8
         run: poetry run flake8
 
-#      - name: Type checking
-#        run: |
-#          poetry run mypy .
+      - name: Type checking
+        run: |
+          poetry run mypy .
 
       - name: Run tests
         run: |
