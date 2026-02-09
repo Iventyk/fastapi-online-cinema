@@ -1,29 +1,21 @@
-from typing import List, Optional
-
-from sqlalchemy import or_, asc, desc
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.dev_engine import get_db
-from src.databases.models.movies import (
-    Movie,
-    Genre,
-    Star,
-    Director,
-)
 from src.schemas.movies import (
     MovieCreate,
     MovieUpdate,
     MovieRead,
     MovieListItem,
 )
+from src.crud import movies as crud
 
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
 
-@router.get("", response_model=List[MovieListItem])
+@router.get("", response_model=list[MovieListItem])
 async def get_movies(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
@@ -40,82 +32,32 @@ async def get_movies(
     order: str = Query("asc", pattern="^(asc|desc)$"),
     db: AsyncSession = Depends(get_db),
 ) -> List[MovieListItem]:
-    stmt = select(Movie).distinct()
+    movies = await crud.get_movies(
+        db,
+        page=page,
+        per_page=per_page,
+        search=search,
+        year_from=year_from,
+        year_to=year_to,
+        imdb_from=imdb_from,
+        imdb_to=imdb_to,
+        price_from=price_from,
+        price_to=price_to,
+        genre_id=genre_id,
+        certification_id=certification_id,
+        sort_by=sort_by,
+        order=order,
+    )
 
-    if search:
-        stmt = (
-            stmt.outerjoin(Movie.directors)
-            .outerjoin(Movie.stars)
-            .where(
-                or_(
-                    Movie.name.ilike(f"%{search}%"),
-                    Movie.description.ilike(f"%{search}%"),
-                    Director.name.ilike(f"%{search}%"),
-                    Star.name.ilike(f"%{search}%"),
-                )
-            )
-        )
-
-    if year_from:
-        stmt = stmt.where(Movie.year >= year_from)
-
-    if year_to:
-        stmt = stmt.where(Movie.year <= year_to)
-
-    if imdb_from:
-        stmt = stmt.where(Movie.imdb >= imdb_from)
-
-    if imdb_to:
-        stmt = stmt.where(Movie.imdb <= imdb_to)
-
-    if price_from:
-        stmt = stmt.where(Movie.price >= price_from)
-
-    if price_to:
-        stmt = stmt.where(Movie.price <= price_to)
-
-    if certification_id:
-        stmt = stmt.where(Movie.certification_id == certification_id)
-
-    if genre_id:
-        stmt = stmt.join(Movie.genres).where(Genre.id == genre_id)
-
-    if sort_by:
-        column = getattr(Movie, sort_by)
-        stmt = stmt.order_by(desc(column) if order == "desc" else asc(column))
-    else:
-        stmt = stmt.order_by(Movie.id)
-
-    offset = (page - 1) * per_page
-    stmt = stmt.offset(offset).limit(per_page)
-
-    result = await db.execute(stmt)
-    movies = result.scalars().all()
-
-    return [
-        MovieListItem(
-            id=m.id,
-            uuid=m.uuid,
-            name=m.name,
-            year=m.year,
-            time=m.time,
-            imdb=m.imdb,
-            price=m.price,
-        )
-        for m in movies
-    ]
+    return [MovieListItem.model_validate(m) for m in movies]
 
 
-@router.get(
-    "/{movie_id}",
-    response_model=MovieRead,
-)
+@router.get("/{movie_id}", response_model=MovieRead)
 async def get_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> MovieRead:
-    result = await db.execute(select(Movie).where(Movie.id == movie_id))
-    movie = result.scalar_one_or_none()
+    movie = await crud.get_movie_by_id(db, movie_id=movie_id)
 
     if not movie:
         raise HTTPException(
@@ -135,55 +77,17 @@ async def create_movie(
     data: MovieCreate,
     db: AsyncSession = Depends(get_db),
 ) -> MovieRead:
-    movie = Movie(
-        name=data.name,
-        year=data.year,
-        time=data.time,
-        imdb=data.imdb,
-        votes=data.votes,
-        meta_score=data.meta_score,
-        gross=data.gross,
-        description=data.description,
-        price=data.price,
-        certification_id=data.certification_id,
-    )
-
-    if data.genre_ids:
-        genres = await db.execute(
-            select(Genre).where(Genre.id.in_(data.genre_ids))
-        )
-        movie.genres = list(genres.scalars().all())
-
-    if data.star_ids:
-        stars = await db.execute(
-            select(Star).where(Star.id.in_(data.star_ids))
-        )
-        movie.stars = list(stars.scalars().all())
-
-    if data.director_ids:
-        directors = await db.execute(
-            select(Director).where(Director.id.in_(data.director_ids))
-        )
-        movie.directors = list(directors.scalars().all())
-
-    db.add(movie)
-    await db.commit()
-    await db.refresh(movie)
-
+    movie = await crud.create_movie(db, data=data)
     return MovieRead.model_validate(movie)
 
 
-@router.put(
-    "/{movie_id}",
-    response_model=MovieRead,
-)
+@router.put("/{movie_id}", response_model=MovieRead)
 async def update_movie(
     movie_id: int,
     data: MovieUpdate,
     db: AsyncSession = Depends(get_db),
 ) -> MovieRead:
-    result = await db.execute(select(Movie).where(Movie.id == movie_id))
-    movie = result.scalar_one_or_none()
+    movie = await crud.get_movie_by_id(db, movie_id=movie_id)
 
     if not movie:
         raise HTTPException(
@@ -191,45 +95,16 @@ async def update_movie(
             detail="Movie not found",
         )
 
-    for field, value in data.model_dump(exclude_unset=True).items():
-        if field.endswith("_ids"):
-            continue
-        setattr(movie, field, value)
-
-    if data.genre_ids is not None:
-        genres = await db.execute(
-            select(Genre).where(Genre.id.in_(data.genre_ids))
-        )
-        movie.genres = list(genres.scalars().all())
-
-    if data.star_ids is not None:
-        stars = await db.execute(
-            select(Star).where(Star.id.in_(data.star_ids))
-        )
-        movie.stars = list(stars.scalars().all())
-
-    if data.director_ids is not None:
-        directors = await db.execute(
-            select(Director).where(Director.id.in_(data.director_ids))
-        )
-        movie.directors = list(directors.scalars().all())
-
-    await db.commit()
-    await db.refresh(movie)
-
+    movie = await crud.update_movie(db, movie=movie, data=data)
     return MovieRead.model_validate(movie)
 
 
-@router.delete(
-    "/{movie_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
+@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
 ) -> None:
-    result = await db.execute(select(Movie).where(Movie.id == movie_id))
-    movie = result.scalar_one_or_none()
+    movie = await crud.get_movie_by_id(db, movie_id=movie_id)
 
     if not movie:
         raise HTTPException(
@@ -237,5 +112,4 @@ async def delete_movie(
             detail="Movie not found",
         )
 
-    await db.delete(movie)
-    await db.commit()
+    await crud.delete_movie(db, movie=movie)

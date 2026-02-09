@@ -1,39 +1,35 @@
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class GenreSchema(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class StarSchema(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DirectorSchema(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CertificationSchema(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieCreate(BaseModel):
@@ -89,8 +85,7 @@ class MovieListItem(BaseModel):
     imdb: float
     price: Optional[float] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieRead(BaseModel):
@@ -114,5 +109,4 @@ class MovieRead(BaseModel):
     stars: List[StarSchema]
     directors: List[DirectorSchema]
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
