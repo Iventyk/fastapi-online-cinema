@@ -31,6 +31,44 @@ The server will run on http://127.0.0.1:8000 by default.
 Use --reload to enable auto-reload on code changes.
 
 
+## Run with Docker
+
+### 1. Create `.env`
+
+Create `.env` from `.env.sample`.
+
+Windows (PowerShell):
+```Copy-Item .env.sample .env```
+
+Linux/macOS/WSL/Git Bash:
+```cp .env.sample .env```
+
+### 2. Build and start services
+
+```docker compose up -d --build```
+
+### 3. Apply migrations (run manually)
+
+Migrations are not executed automatically on `up`. Run them explicitly:
+
+```docker compose --profile migrate run --rm migrator```
+
+### Local URLs
+
+API docs:
+http://127.0.0.1:8000/docs
+
+MailHog UI:
+http://127.0.0.1:8025
+
+MinIO Console:
+http://127.0.0.1:9001
+
+
+### Stop services
+
+```docker compose down```
+
 # Core Dependencies
 ```
 imports:
@@ -58,13 +96,13 @@ current_user: Annotated[CurrentUser, Depends(get_current_user)]
 
 
 ##  Authorization and Authentication Overview
+
 **UserGroupEnum** - Defines user access levels within the system:
 ```
 USER – default application user
 MODERATOR – elevated permissions
 ADMIN – full administrative access
 ```
-
 **GenderEnum** - Used in user profiles:
 ```
 MALE
@@ -138,6 +176,9 @@ One-to-one with UserModel
 Notes:
 Profile is optional but strictly one profile per user
 Automatically deleted when the user is deleted
+```
+```
+DB Schema - https://dbdiagram.io/d/Accounts-app-675ef6bee763df1f00fd8ed1
 ```
 **Token System**
 ```
@@ -237,40 +278,93 @@ Workflow:
 
 Goal: ensures a seamless user experience where items added before authentication are not lost.
 ```
-## Run with Docker
-
-### 1. Create `.env`
-
-Create `.env` from `.env.sample`.
-
-Windows (PowerShell):
-```Copy-Item .env.sample .env```
-
-Linux/macOS/WSL/Git Bash:
-```cp .env.sample .env```
-
-### 2. Build and start services
-
-```docker compose up -d --build```
-
-### 3. Apply migrations (run manually)
-
-Migrations are not executed automatically on `up`. Run them explicitly:
-
-```docker compose --profile migrate run --rm migrator```
-
-### Local URLs
-
-API docs:
-http://127.0.0.1:8000/docs
-
-MailHog UI:
-http://127.0.0.1:8025
-
-MinIO Console:
-http://127.0.0.1:9001
 
 
-### Stop services
+## Payments
 
-```docker compose down```
+### Overview
+The payment system allows users to pay for orders using Stripe and receive email notifications about their payment status. It also supports admin views and webhook handling for transaction validation.
+
+---
+
+### User Functionality
+- Users can create a payment for an order.
+- After successful payment:
+  - The order status is updated to `PAID`.
+  - The user receives an email confirmation.
+- Users can view a history of all their payments, including:
+  - Date and time of payment
+  - Amount
+  - Status (`successful`, `canceled`, `refunded`)
+  - Itemized details of each order
+
+#### API Endpoints
+- `POST /payments/{order_id}` — Create payment for a specific order. Returns `client_secret` for Stripe.
+- `GET /payments/` — Get all payments of the authenticated user.
+
+---
+
+### Admin Functionality
+- Admins can view all payments with optional filters:
+  - By user ID
+  - By status (`successful`, `canceled`, `refunded`)
+- Only users with `ADMIN` permission can access admin endpoints.
+
+#### API Endpoints
+- `GET /payments/admin` — Get all payments (admin only) with filters.
+
+---
+
+### Payment Processing
+- Uses Stripe as the payment gateway.
+- Validates:
+  - Total amount of the order
+  - Order status (`PENDING`)
+  - User authentication
+- Creates `Payment` and `PaymentItem` records in the database.
+- Triggers **Celery tasks** to send payment notification emails:
+  - `send_payment_success_email_task` — sent after successful payment
+  - `send_payment_failed_email_task` — sent if payment fails
+
+---
+
+### Webhooks
+- `POST /webhooks/stripe` — Receives Stripe events to validate payments and update order/payment statuses.
+- Updates Payment and Order status automatically based on webhook event type.
+- Sends email notifications for successful or failed payments via Celery tasks.
+
+---
+
+### Database Models
+- **Payment**
+  - `id: int`
+  - `user_id: int` — foreign key to users
+  - `order_id: int` — foreign key to orders
+  - `amount: Decimal`
+  - `status: PaymentStatusEnum` (`SUCCESSFUL`, `CANCELED`, `REFUNDED`)
+  - `external_payment_id: str | None`
+  - `created_at: datetime`
+- **PaymentItem**
+  - `id: int`
+  - `payment_id: int` — foreign key to Payment
+  - `order_item_id: int` — foreign key to OrderItem
+  - `price_at_payment: Decimal`
+
+- DB Schema https://dbdiagram.io/d/Payment-app-675f1a65e763df1f00ff70c6
+
+---
+
+### Email Notifications
+- **Payment Success**
+  - Triggered after payment is successfully processed.
+  - Includes order details and amount.
+- **Payment Failed**
+  - Triggered if payment fails or is declined.
+  - Provides instructions to the user to retry or select a different payment method.
+
+All email sending is handled asynchronously via Celery tasks, ensuring non-blocking behavior during API calls.
+
+---
+
+
+
