@@ -9,6 +9,8 @@ from src.schemas.accounts import (
     ResetPasswordRequestSchema,
     ForgotPasswordSchema,
     AdminOperatedData,
+    RefreshTokenSchema,
+    RefreshTokenResponseSchema,
 )
 
 from src.schemas.movies import (
@@ -55,6 +57,8 @@ __all__ = [
     "ForgotPasswordSchema",
     "ResetPasswordRequestSchema",
     "AdminOperatedData",
+    "RefreshTokenSchema",
+    "RefreshTokenResponseSchema",
     "MovieCreate",
     "MovieUpdate",
     "MovieListItem",
