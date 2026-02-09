@@ -16,7 +16,7 @@ from src.exceptions import (
     ProfileAlreadyExistsException,
     ProfileDoesNotExistException,
 )
-from src.schemas import ProfileCreateSchema, CurrentUser
+from src.schemas import ProfileCreateSchema, CurrentUser, CommonResponseSchema
 from src.schemas.profile import ProfileReadSchema, ProfileUpdateSchema
 from src.securuty.utils import get_current_user
 from src.storage import S3StorageInterface
@@ -131,3 +131,21 @@ async def update_user_profile(
     await db.commit()
     await db.refresh(profile)
     return ProfileReadSchema.model_validate(profile)
+
+
+async def delete_profile(
+        db: Annotated[AsyncSession, Depends(get_db)],
+        account_id: int,
+) -> CommonResponseSchema:
+    profile = await _get_profile_by_id(account_id, db)
+
+    if not profile:
+        raise ProfileDoesNotExistException(
+            message="Account with provided id does not exist"
+        )
+
+    await db.delete(profile)
+    await db.commit()
+    return CommonResponseSchema(
+        message="Profile with provided id has been deleted"
+    )

@@ -8,6 +8,7 @@ from src.crud import (
     retrieve_user_profile,
     update_user_profile,
 )
+from src.crud.profile import delete_profile
 from src.databases import get_db
 from src.exceptions import (
     UserPermissionDenied,
@@ -20,7 +21,7 @@ from src.schemas import (
     CurrentUser,
     ProfileReadSchema,
     ProfileCreateSchema,
-    ProfileUpdateSchema,
+    ProfileUpdateSchema, CommonResponseSchema,
 )
 from src.securuty.utils import get_current_user
 from src.storage import S3StorageInterface
@@ -153,3 +154,26 @@ async def partial_update_profile(
         db=db,
         s3_storage=s3_storage
     )
+@profile_router.delete(
+    "/{account_id}",
+    response_model=CommonResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def delete_user_profile(
+        account_id: int,
+        db: Annotated[AsyncSession, Depends(get_db)],
+        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CommonResponseSchema:
+    if auth_user.profile_id != account_id and auth_user.permission not in [
+        "moderator", "admin",
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this profile",
+        )
+    try:
+        return await delete_profile(account_id=account_id, db=db)
+    except ProfileDoesNotExistException as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(error)
+        )
