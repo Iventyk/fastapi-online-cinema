@@ -161,8 +161,6 @@ async def refresh_account_token(
     summary="Activate Account",
     description="Verify email and activate user account via token.",
 )
-
-
 async def activate_account(
     request: Request,  # noqa
     activation_token: str,

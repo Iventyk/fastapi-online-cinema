@@ -23,8 +23,8 @@ from src.storage import S3StorageInterface
 
 
 async def _get_profile_by_id(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> UserProfileModel:
     profile = await db.get(
         UserProfileModel,
@@ -39,11 +39,11 @@ async def _get_profile_by_id(
 
 
 async def create_user_profile(
-        account_id: int,
-        profile_data: Annotated[ProfileCreateSchema, Form()],
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
+    account_id: int,
+    profile_data: Annotated[ProfileCreateSchema, Form()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.user_id != account_id and auth_user.permission != "admin":
         raise UserPermissionDenied(
@@ -94,8 +94,8 @@ async def create_user_profile(
 
 
 async def retrieve_user_profile(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> ProfileReadSchema:
     profile = await _get_profile_by_id(account_id, db)
 
@@ -103,10 +103,10 @@ async def retrieve_user_profile(
 
 
 async def update_user_profile(
-        account_id: int,
-        profile_data: ProfileUpdateSchema,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
+    account_id: int,
+    profile_data: ProfileUpdateSchema,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     profile = await _get_profile_by_id(account_id, db)
 
@@ -134,8 +134,8 @@ async def update_user_profile(
 
 
 async def delete_profile(
-        db: Annotated[AsyncSession, Depends(get_db)],
-        account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
 ) -> CommonResponseSchema:
     profile = await _get_profile_by_id(account_id, db)
 

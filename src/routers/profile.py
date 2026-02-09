@@ -21,7 +21,8 @@ from src.schemas import (
     CurrentUser,
     ProfileReadSchema,
     ProfileCreateSchema,
-    ProfileUpdateSchema, CommonResponseSchema,
+    ProfileUpdateSchema,
+    CommonResponseSchema,
 )
 from src.securuty.utils import get_current_user
 from src.storage import S3StorageInterface
@@ -36,11 +37,11 @@ profile_router = APIRouter(prefix="/profile", tags=["Profile"])
     response_model=ProfileReadSchema,
 )
 async def create_profile(
-        account_id: int,
-        profile_data: Annotated[ProfileCreateSchema, Form()],
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
+    account_id: int,
+    profile_data: Annotated[ProfileCreateSchema, Form()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     try:
         return await create_user_profile(
@@ -78,9 +79,9 @@ async def create_profile(
     status_code=status.HTTP_200_OK,
 )
 async def get_profile(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> ProfileReadSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
         "moderator",
@@ -104,11 +105,11 @@ async def get_profile(
     status_code=status.HTTP_200_OK,
 )
 async def update_profile(
-        account_id: int,
-        profile_data: Annotated[ProfileUpdateSchema, Form()],
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
+    account_id: int,
+    profile_data: Annotated[ProfileUpdateSchema, Form()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
         "moderator",
@@ -123,7 +124,7 @@ async def update_profile(
         account_id=account_id,
         profile_data=profile_data,
         db=db,
-        s3_storage=s3_storage
+        s3_storage=s3_storage,
     )
 
 
@@ -133,11 +134,11 @@ async def update_profile(
     status_code=status.HTTP_200_OK,
 )
 async def partial_update_profile(
-        account_id: int,
-        profile_data: Annotated[ProfileUpdateSchema, Form()],
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
-        s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
+    account_id: int,
+    profile_data: Annotated[ProfileUpdateSchema, Form()],
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
         "moderator",
@@ -152,20 +153,23 @@ async def partial_update_profile(
         account_id=account_id,
         profile_data=profile_data,
         db=db,
-        s3_storage=s3_storage
+        s3_storage=s3_storage,
     )
+
+
 @profile_router.delete(
     "/{account_id}",
     response_model=CommonResponseSchema,
     status_code=status.HTTP_200_OK,
 )
 async def delete_user_profile(
-        account_id: int,
-        db: Annotated[AsyncSession, Depends(get_db)],
-        auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> CommonResponseSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
-        "moderator", "admin",
+        "moderator",
+        "admin",
     ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
