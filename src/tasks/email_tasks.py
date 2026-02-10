@@ -8,7 +8,7 @@ settings = get_settings()
 email_sender = get_email_sender(settings)
 
 
-@celery_instance.task(name="send_activation_email_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="send_activation_email_task")
 def send_activation_email_task(
     email: str,
     activation_link: str,
@@ -21,7 +21,7 @@ def send_activation_email_task(
     )
 
 
-@celery_instance.task(name="send_activation_complete_email_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="send_activation_complete_email_task")
 def send_activation_complete_email_task(
     email: str,
     login_link: str,
@@ -34,7 +34,7 @@ def send_activation_complete_email_task(
     )
 
 
-@celery_instance.task(name="send_password_reset_email_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="send_password_reset_email_task")
 def send_password_reset_email_task(
     email: str,
     reset_link: str,
@@ -47,7 +47,7 @@ def send_password_reset_email_task(
     )
 
 
-@celery_instance.task(name="send_password_reset_complete_email_task")  # type: ignore[untyped-decorator]
+@celery_instance.task(name="send_password_reset_complete_email_task")
 def send_password_reset_complete_email_task(
     email: str,
     login_link: str,
@@ -57,4 +57,22 @@ def send_password_reset_complete_email_task(
     """
     return asyncio.run(
         email_sender.send_password_reset_complete_email(email, login_link)
+    )
+
+
+@celery_instance.task(name="send_payment_success_email_task")
+def send_payment_success_email_task(
+    email: str, amount: float, order_id: int
+) -> Any:
+    return asyncio.run(
+        email_sender.send_payment_success_email(email, amount, order_id)  # type: ignore
+    )
+
+
+@celery_instance.task(name="send_payment_failed_email_task")
+def send_payment_failed_email_task(
+    email: str, amount: float, order_id: int
+) -> Any:
+    return asyncio.run(
+        email_sender.send_payment_failed_email(email, amount, order_id)  # type: ignore
     )
