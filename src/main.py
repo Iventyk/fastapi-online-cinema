@@ -99,11 +99,11 @@ async def get_open_api_endpoint(
     )
 
 
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content=jsonable_encoder({"detail": exc.errors()}),
-    )
+# @app.exception_handler(RequestValidationError)
+# async def validation_exception_handler(
+#     request: Request, exc: RequestValidationError
+# ) -> JSONResponse:
+#     return JSONResponse(
+#         status_code=status.HTTP_400_BAD_REQUEST,
+#         content=jsonable_encoder({"detail": exc.errors()}),
+#     )

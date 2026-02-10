@@ -1,10 +1,10 @@
 from typing import Annotated, Any, Coroutine
 from uuid import uuid4
+from zoneinfo import available_timezones
 
 from fastapi import Form, Depends
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 from src.databases import get_db
 from src.config import get_storage
@@ -16,7 +16,7 @@ from src.exceptions import (
     ProfileAlreadyExistsException,
     ProfileDoesNotExistException,
 )
-from src.schemas import ProfileCreateSchema, CurrentUser
+from src.schemas import ProfileCreateSchema, CurrentUser, CommonResponseSchema
 from src.schemas.profile import ProfileReadSchema, ProfileUpdateSchema
 from src.securuty.utils import get_current_user
 from src.storage import S3StorageInterface
@@ -106,13 +106,46 @@ async def update_user_profile(
     account_id: int,
     profile_data: ProfileUpdateSchema,
     db: Annotated[AsyncSession, Depends(get_db)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     profile = await _get_profile_by_id(account_id, db)
 
     update_dict = profile_data.model_dump(exclude_unset=True)
+    avatar = update_dict.pop("avatar")
+    if avatar:
+        file_data = await avatar.read()
+        file_name = f"avatar/{uuid4()}_{avatar.filename}"
+
+        await s3_storage.upload_file(
+            file_name=file_name,
+            file_data=file_data,
+            content_type=avatar.content_type,
+        )
+
+        avatar_url = await s3_storage.get_file_url(file_name=file_name)
+        setattr(profile, "avatar", avatar_url)
+
     for key, value in update_dict.items():
         setattr(profile, key, value)
 
     await db.commit()
     await db.refresh(profile)
     return ProfileReadSchema.model_validate(profile)
+
+
+async def delete_profile(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    account_id: int,
+) -> CommonResponseSchema:
+    profile = await _get_profile_by_id(account_id, db)
+
+    if not profile:
+        raise ProfileDoesNotExistException(
+            message="Account with provided id does not exist"
+        )
+
+    await db.delete(profile)
+    await db.commit()
+    return CommonResponseSchema(
+        message="Profile with provided id has been deleted"
+    )

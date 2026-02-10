@@ -8,6 +8,7 @@ from src.crud import (
     retrieve_user_profile,
     update_user_profile,
 )
+from src.crud.profile import delete_profile
 from src.databases import get_db
 from src.exceptions import (
     UserPermissionDenied,
@@ -21,6 +22,7 @@ from src.schemas import (
     ProfileReadSchema,
     ProfileCreateSchema,
     ProfileUpdateSchema,
+    CommonResponseSchema,
 )
 from src.securuty.utils import get_current_user
 from src.storage import S3StorageInterface
@@ -65,6 +67,10 @@ async def create_profile(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
         )
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(error)
+        )
 
 
 @profile_router.get(
@@ -100,9 +106,10 @@ async def get_profile(
 )
 async def update_profile(
     account_id: int,
-    profile_data: ProfileUpdateSchema,
+    profile_data: Annotated[ProfileUpdateSchema, Form()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
         "moderator",
@@ -117,6 +124,7 @@ async def update_profile(
         account_id=account_id,
         profile_data=profile_data,
         db=db,
+        s3_storage=s3_storage,
     )
 
 
@@ -127,9 +135,10 @@ async def update_profile(
 )
 async def partial_update_profile(
     account_id: int,
-    profile_data: ProfileUpdateSchema,
+    profile_data: Annotated[ProfileUpdateSchema, Form()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+    s3_storage: Annotated[S3StorageInterface, Depends(get_storage)],
 ) -> ProfileReadSchema:
     if auth_user.profile_id != account_id and auth_user.permission not in [
         "moderator",
@@ -144,4 +153,31 @@ async def partial_update_profile(
         account_id=account_id,
         profile_data=profile_data,
         db=db,
+        s3_storage=s3_storage,
     )
+
+
+@profile_router.delete(
+    "/{account_id}",
+    response_model=CommonResponseSchema,
+    status_code=status.HTTP_200_OK,
+)
+async def delete_user_profile(
+    account_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> CommonResponseSchema:
+    if auth_user.profile_id != account_id and auth_user.permission not in [
+        "moderator",
+        "admin",
+    ]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to view this profile",
+        )
+    try:
+        return await delete_profile(account_id=account_id, db=db)
+    except ProfileDoesNotExistException as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(error)
+        )

@@ -161,7 +161,6 @@ async def refresh_account_token(
     summary="Activate Account",
     description="Verify email and activate user account via token.",
 )
-@limiter.limit("1/minute")
 async def activate_account(
     request: Request,  # noqa
     activation_token: str,
