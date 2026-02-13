@@ -13,6 +13,7 @@ from src.exceptions.shopping_cart import (
     CartItemAlreadyExist,
     CartItemDoesNotExist,
     CartItemsDoesNotExist,
+    CartAlreadyExist,
 )
 from src.exceptions.movies import (
     MovieDoesNotExist,
@@ -67,6 +68,7 @@ __all__ = [
     "CartItemAlreadyExist",
     "CartItemDoesNotExist",
     "CartItemsDoesNotExist",
+    "CartAlreadyExist",
     "OrderNotFound",
     "OrderCancellationNotPossible",
     "PendingOrderExists",

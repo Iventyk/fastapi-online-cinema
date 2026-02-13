@@ -6,6 +6,10 @@ class BaseShoppingCartException(Exception):
         super().__init__(message)
 
 
+class CartAlreadyExist(BaseShoppingCartException):
+    pass
+
+
 class CartItemAlreadyExist(BaseShoppingCartException):
     pass
 
