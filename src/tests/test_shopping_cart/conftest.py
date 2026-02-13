@@ -123,7 +123,7 @@ async def test_user(
     db_session: AsyncSession, setup_dependencies: dict[str, int]
 ) -> UserModel:
     """Creating test user in database"""
-    user = await UserModel.create(
+    user = UserModel.create(
         email="test_crud@example.com",
         raw_password="SuperStrongPassword2!",
         group_id=setup_dependencies["group_id"],
@@ -140,7 +140,7 @@ async def test_moderator(
     db_session: AsyncSession, setup_dependencies: dict[str, int]
 ) -> UserModel:
     """Creating test moderator in database"""
-    user = await UserModel.create(
+    user = UserModel.create(
         email="test_crud_moderator@example.com",
         raw_password="SuperStrongPassword3!",
         group_id=setup_dependencies["moderator_group_id"],

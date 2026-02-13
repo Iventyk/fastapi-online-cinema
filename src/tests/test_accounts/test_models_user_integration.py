@@ -19,7 +19,7 @@ async def test_create_user_with_group(async_session: AsyncSession) -> None:
     async_session.add(group)
     await async_session.commit()
 
-    user = await UserModel.create(
+    user = UserModel.create(
         email="user@example.com",
         raw_password="StrongPass123!",
         group_id=group.id,
@@ -42,12 +42,12 @@ async def test_unique_email_constraint(async_session: AsyncSession) -> None:
     async_session.add(group)
     await async_session.commit()
 
-    user1 = await UserModel.create(
+    user1 = UserModel.create(
         email="duplicate@example.com",
         raw_password="StrongPass123!",
         group_id=group.id,
     )
-    user2 = await UserModel.create(
+    user2 = UserModel.create(
         email="duplicate@example.com",
         raw_password="StrongPass123!",
         group_id=group.id,

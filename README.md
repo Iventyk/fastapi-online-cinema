@@ -74,7 +74,7 @@ http://127.0.0.1:9001
 imports:
 
 from src.schemas import CurrentUser
-from src.securuty import JWTAuthManagerInterface, get_current_user
+from src.security import JWTAuthManagerInterface, get_current_user
 from src.config import get_jwt_manager, get_settings, Settings
 from src.databases import get_db
 

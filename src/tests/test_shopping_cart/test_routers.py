@@ -6,7 +6,7 @@ from httpx import AsyncClient
 
 from src.databases.models import UserModel, Movie, CartItem
 from src.main import app
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 from src.exceptions import UserNotExist, UserPermissionDenied
 from src.schemas import MovieInCartSchema, CurrentUser
 

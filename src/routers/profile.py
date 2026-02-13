@@ -24,7 +24,7 @@ from src.schemas import (
     ProfileUpdateSchema,
     CommonResponseSchema,
 )
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 from src.storage import S3StorageInterface
 from src.config import get_storage
 

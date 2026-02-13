@@ -22,8 +22,8 @@ from src.schemas import (
     ChangePasswordSchema,
     ResetPasswordRequestSchema,
 )
-from src.securuty import JWTAuthManagerInterface
-from src.securuty.utils import get_current_user
+from src.security import JWTAuthManagerInterface
+from src.security.utils import get_current_user
 from src.tasks import (
     send_password_reset_email_task,
     send_password_reset_complete_email_task,

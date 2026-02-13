@@ -1,7 +1,7 @@
 import pytest
 from datetime import timedelta
-from src.securuty import JWTAuthManager
-from src.securuty.interfaces import JWTAuthManagerInterface
+from src.security import JWTAuthManager
+from src.security.interfaces import JWTAuthManagerInterface
 from src.exceptions import TokenExpiredError, InvalidTokenError
 
 

@@ -11,7 +11,7 @@ from src.services.payment import (
     get_user_payment_history,
     get_all_payments,
 )
-from src.securuty.utils import get_current_user, CurrentUser
+from src.security.utils import get_current_user, CurrentUser
 from src.tasks.email_tasks import send_payment_success_email_task
 from src.databases.models import UserGroupEnum
 

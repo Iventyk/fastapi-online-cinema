@@ -18,7 +18,7 @@ from src.exceptions import (
 )
 from src.schemas import ProfileCreateSchema, CurrentUser, CommonResponseSchema
 from src.schemas.profile import ProfileReadSchema, ProfileUpdateSchema
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 from src.storage import S3StorageInterface
 
 

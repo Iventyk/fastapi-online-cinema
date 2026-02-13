@@ -34,8 +34,8 @@ from src.schemas import (
 )
 from src.databases import get_db
 from src.config import get_jwt_manager, get_settings, Settings
-from src.securuty import JWTAuthManagerInterface
-from src.securuty.utils import get_current_user
+from src.security import JWTAuthManagerInterface
+from src.security.utils import get_current_user
 from src.services import sync_guest_cart_to_user
 from src.tasks import (
     send_activation_email_task,
@@ -65,7 +65,7 @@ async def create_new_user(
     if not user_group:
         raise UserGroupNotExist(message="Provided group does not exist")
 
-    user = await UserModel.create(
+    user = UserModel.create(
         email=user_dict["email"],
         raw_password=user_dict["password"],
         group_id=user_group.id,

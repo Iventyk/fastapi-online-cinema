@@ -2,7 +2,6 @@ from datetime import datetime, date, timezone, timedelta
 from enum import StrEnum, auto
 from typing import List, TYPE_CHECKING, Optional
 
-from pydantic import EmailStr
 from sqlalchemy import (
     String,
     Boolean,
@@ -14,13 +13,14 @@ from sqlalchemy import (
     Date,
     Text,
     UniqueConstraint,
+
 )
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 
 from src.config import get_settings
 from src.databases.models.base import Base
 from src.validators import validate_password
-from src.securuty import hash_password, verify_password
+from src.security import hash_password, verify_password
 from src.databases.models.favorites import Favorite
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class UserModel(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    email: Mapped[EmailStr] = mapped_column(
+    email: Mapped[str] = mapped_column(
         String(255), nullable=False, unique=True, index=True
     )
     _hashed_password: Mapped[str] = mapped_column(
@@ -143,7 +143,7 @@ class UserModel(Base):
         return self.group.name == group_name
 
     @classmethod
-    async def create(
+    def create(
         cls, email: str, raw_password: str, group_id: int | Mapped[int]
     ) -> "UserModel":
         """
@@ -164,8 +164,6 @@ class UserModel(Base):
 
     @password.setter
     def password(self, password: str) -> None:
-        password = validate_password(password)
-
         hashed_password = hash_password(password)
 
         self._hashed_password = hashed_password

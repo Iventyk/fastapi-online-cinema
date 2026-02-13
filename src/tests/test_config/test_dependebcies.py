@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 from src.main import app
 from src.notifications import EmailSender
-from src.securuty import JWTAuthManager
+from src.security import JWTAuthManager
 
 
 def test_get_settings_testing() -> None:

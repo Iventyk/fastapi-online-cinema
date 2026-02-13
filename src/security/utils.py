@@ -12,7 +12,7 @@ from sqlalchemy.orm import joinedload
 from src.databases.models import UserModel
 from src.exceptions import UserNotExist, TokenExpiredError, InvalidTokenError
 from src.schemas import CurrentUser
-from src.securuty import JWTAuthManagerInterface
+from src.security import JWTAuthManagerInterface
 from src.config import get_jwt_manager
 from src.databases import get_db
 

@@ -8,7 +8,7 @@ from src.databases.dev_engine import get_db
 from src.databases.models.favorites import Favorite
 from src.databases.models.movies import Movie
 from src.schemas.movies import MovieListItem
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 from src.databases.models.accounts import UserModel
 
 router = APIRouter(prefix="/favorites", tags=["Favorites"])
