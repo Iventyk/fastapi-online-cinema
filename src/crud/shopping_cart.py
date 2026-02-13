@@ -113,15 +113,14 @@ async def clear_cart(
         user_id=user_id, authenticated_user=authenticated_user
     )
 
-    query = select(Cart).where(Cart.user_id == user_id)
-    result = await db.execute(query)
-    cart = result.scalar_one_or_none()
+    query = select(Cart.id).where(Cart.user_id == user_id)
+    cart_id = await db.scalar(query)
 
-    if not cart or not cart.items:
+    if not cart_id:
         raise CartItemsDoesNotExist("Cart is already empty")
 
-    delete_query = delete(CartItem).where(CartItem.cart_id == cart.id)
-    await db.scalar(delete_query)
+    delete_query = delete(CartItem).where(CartItem.cart_id == cart_id)
+    await db.execute(delete_query)
 
     await db.commit()
 
