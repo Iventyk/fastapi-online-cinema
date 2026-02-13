@@ -113,10 +113,7 @@ async def clear_cart(
         user_id=user_id, authenticated_user=authenticated_user
     )
 
-    query = (
-        select(Cart)
-        .where(Cart.user_id == user_id)
-    )
+    query = select(Cart).where(Cart.user_id == user_id)
     result = await db.execute(query)
     cart = result.scalar_one_or_none()
 
