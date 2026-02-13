@@ -120,7 +120,10 @@ async def clear_cart(
         raise CartItemsDoesNotExist("Cart is already empty")
 
     delete_query = delete(CartItem).where(CartItem.cart_id == cart_id)
-    await db.execute(delete_query)
+    result = await db.execute(delete_query)
+
+    if result.rowcount == 0:  # type: ignore
+        raise CartItemsDoesNotExist("Cart is already empty")
 
     await db.commit()
 
@@ -153,6 +156,7 @@ async def get_cart(
         db.add(cart)
         await db.commit()
         await db.refresh(cart)
+        cart.items = []
 
     return CartReadSchema.model_validate(cart)
 
