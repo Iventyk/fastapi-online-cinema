@@ -2,7 +2,7 @@ from typing import Annotated, Any, Coroutine
 from uuid import uuid4
 from zoneinfo import available_timezones
 
-from fastapi import Form, Depends
+from fastapi import Form, Depends, UploadFile
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -38,6 +38,21 @@ async def _get_profile_by_id(
     return profile
 
 
+async def _upload_avatar_and_get_url(
+    picture: UploadFile, s3_storage: S3StorageInterface
+) -> str:
+    """Helper to handle the boilerplate of avatar uploads."""
+    file_data = await picture.read()
+    file_name = f"avatar/{uuid4()}_{picture.filename}"
+
+    await s3_storage.upload_file(
+        file_name=file_name,
+        file_data=file_data,
+        content_type=picture.content_type,  # type: ignore[arg-type]
+    )
+    return await s3_storage.get_file_url(file_name=file_name)
+
+
 async def create_user_profile(
     account_id: int,
     profile_data: Annotated[ProfileCreateSchema, Form()],
@@ -65,18 +80,10 @@ async def create_user_profile(
             message="Account with provided id already has profile"
         )
     avatar_url = "Undefined"
-    picture = profile_data.avatar
-    if picture:
-        file_data = await picture.read()
-        file_name = f"avatar/{uuid4()}_{picture.filename}"
-
-        await s3_storage.upload_file(
-            file_name=file_name,
-            file_data=file_data,
-            content_type=picture.content_type,  # type: ignore[arg-type]
+    if profile_data.avatar:
+        avatar_url = await _upload_avatar_and_get_url(
+            profile_data.avatar, s3_storage
         )
-
-        avatar_url = await s3_storage.get_file_url(file_name=file_name)
 
     db_profile = UserProfileModel(
         first_name=profile_data.first_name,
@@ -113,17 +120,7 @@ async def update_user_profile(
     update_dict = profile_data.model_dump(exclude_unset=True)
     avatar = update_dict.pop("avatar")
     if avatar:
-        file_data = await avatar.read()
-        file_name = f"avatar/{uuid4()}_{avatar.filename}"
-
-        await s3_storage.upload_file(
-            file_name=file_name,
-            file_data=file_data,
-            content_type=avatar.content_type,
-        )
-
-        avatar_url = await s3_storage.get_file_url(file_name=file_name)
-        setattr(profile, "avatar", avatar_url)
+        profile.avatar = await _upload_avatar_and_get_url(avatar, s3_storage)
 
     for key, value in update_dict.items():
         setattr(profile, key, value)
@@ -138,11 +135,6 @@ async def delete_profile(
     account_id: int,
 ) -> CommonResponseSchema:
     profile = await _get_profile_by_id(account_id, db)
-
-    if not profile:
-        raise ProfileDoesNotExistException(
-            message="Account with provided id does not exist"
-        )
 
     await db.delete(profile)
     await db.commit()

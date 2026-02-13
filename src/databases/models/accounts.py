@@ -13,7 +13,6 @@ from sqlalchemy import (
     Date,
     Text,
     UniqueConstraint,
-
 )
 from sqlalchemy.orm import Mapped, relationship, mapped_column
 

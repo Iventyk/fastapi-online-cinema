@@ -64,30 +64,30 @@ async def create_new_user(
     user_group = result.scalar_one_or_none()
     if not user_group:
         raise UserGroupNotExist(message="Provided group does not exist")
+    try:
+        user = UserModel.create(
+            email=user_dict["email"],
+            raw_password=user_dict["password"],
+            group_id=user_group.id,
+        )
+        db.add(user)
+        await db.flush()
 
-    user = UserModel.create(
-        email=user_dict["email"],
-        raw_password=user_dict["password"],
-        group_id=user_group.id,
-    )
+        token = jwt_manager.create_activation_token()
+        activation_token = ActivationTokenModel.create(
+            token=token, user_id=user.id
+        )
+        db.add(activation_token)
 
-    db.add(user)
-    await db.flush()
+        await sync_guest_cart_to_user(
+            db=db, user_id=user.id, guest_movie_ids=user_data.guest_cart_items
+        )
 
-    token = jwt_manager.create_activation_token()
-    activation_token = ActivationTokenModel.create(
-        token=token,
-        user_id=user.id,
-    )
-    db.add(activation_token)
-    await db.commit()
-    await db.refresh(user)
-
-    await sync_guest_cart_to_user(
-        db=db,
-        user_id=user.id,
-        guest_movie_ids=user_data.guest_cart_items,
-    )
+        await db.commit()
+        await db.refresh(user)
+    except Exception:
+        await db.rollback()
+        raise
 
     activation_link = (
         f"http://127.0.0.1:8000/accounts/activate/?activation_token={token}"

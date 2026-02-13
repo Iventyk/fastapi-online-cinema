@@ -8,17 +8,28 @@ settings = get_settings()
 email_sender = get_email_sender(settings)
 
 
-@celery_instance.task(name="send_activation_email_task")
+@celery_instance.task(
+    bind=True,
+    name="send_activation_email_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_kwargs={"max_retries": 5},
+)
 def send_activation_email_task(
+    self,
     email: str,
     activation_link: str,
 ) -> Any:
     """
-    Celery-task to send activation email.
+    Celery task to send activation email with automatic retries.
     """
-    return asyncio.run(
-        email_sender.send_activation_email(email, activation_link)
-    )
+    try:
+        return asyncio.run(
+            email_sender.send_activation_email(email, activation_link)
+        )
+    except Exception as exc:
+        raise self.retry(exc=exc)
 
 
 @celery_instance.task(name="send_activation_complete_email_task")
