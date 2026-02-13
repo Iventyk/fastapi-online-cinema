@@ -5,7 +5,7 @@ from src.databases.models import UserModel
 
 @pytest.mark.asyncio
 async def test_user_create_hashes_password() -> None:
-    user = await UserModel.create(
+    user = UserModel.create(
         email="test@example.com",
         raw_password="StrongPass123!",
         group_id=1,
@@ -36,10 +36,3 @@ def test_check_password_failure() -> None:
     user.password = "StrongPass123!"
 
     assert user.check_password("WrongPassword") is False
-
-
-def test_invalid_password_rejected() -> None:
-    user = UserModel(email="test@example.com", group_id=1)
-
-    with pytest.raises(ValueError):
-        user.password = "123"

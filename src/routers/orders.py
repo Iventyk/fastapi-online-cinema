@@ -26,7 +26,7 @@ from src.schemas import (
     OrderCreateSchema,
     OrderCreateResponseSchema,
 )
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 
 order_router = APIRouter(prefix="/orders", tags=["Orders"])
 

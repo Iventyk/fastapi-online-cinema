@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.dev_engine import get_db
 from src.schemas.movie_reactions import MovieReactionRead
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 from src.databases.models.accounts import UserModel
 from src.crud import movie_reactions as crud
 

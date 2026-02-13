@@ -17,7 +17,7 @@ from src.schemas import (
     CurrentUser,
     AdminOperatedData,
 )
-from src.securuty.utils import get_current_user
+from src.security.utils import get_current_user
 
 account_router = APIRouter(prefix="/accounts", tags=["Accounts management"])
 

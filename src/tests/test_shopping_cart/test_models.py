@@ -31,7 +31,7 @@ async def test_cart_relationship_flow(
     """
     Test relation cycle: User -> Cart -> Items -> Movie
     """
-    user = await UserModel.create(
+    user = UserModel.create(
         email="cart_user@test.com",
         raw_password="VeryHardPassword1!",
         group_id=setup_dependencies["group_id"],
@@ -75,7 +75,7 @@ async def test_cart_item_unique_constraint(
     """
     Checking if one movie can't add twice (IntegrityError).
     """
-    user = await UserModel.create(
+    user = UserModel.create(
         email="unique@test.com",
         raw_password="VeryHardPassword1!",
         group_id=setup_dependencies["group_id"],
@@ -109,7 +109,7 @@ async def test_cascade_delete_user_clears_cart(
     Checking cascade='all, delete-orphan' on user deleting.
     Deleting User -> Deleting Cart -> Deleting CartItems.
     """
-    user = await UserModel.create(
+    user = UserModel.create(
         email="delete_me@test.com",
         raw_password="VeryHardPassword1!",
         group_id=setup_dependencies["group_id"],

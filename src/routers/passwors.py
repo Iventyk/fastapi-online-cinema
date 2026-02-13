@@ -24,8 +24,8 @@ from src.schemas import (
     ResetPasswordRequestSchema,
     ForgotPasswordSchema,
 )
-from src.securuty import JWTAuthManagerInterface
-from src.securuty.utils import get_current_user
+from src.security import JWTAuthManagerInterface
+from src.security.utils import get_current_user
 
 password_router = APIRouter(prefix="/password", tags=["Password management"])
 

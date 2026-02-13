@@ -33,8 +33,8 @@ from src.schemas import (
     RefreshTokenResponseSchema,
     RefreshTokenSchema,
 )
-from src.securuty import JWTAuthManagerInterface
-from src.securuty.utils import get_current_user
+from src.security import JWTAuthManagerInterface
+from src.security.utils import get_current_user
 from src.config.limiter import limiter
 
 auth_router = APIRouter(prefix="/accounts", tags=["Auth"])

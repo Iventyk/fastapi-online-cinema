@@ -10,7 +10,7 @@ from src.config.settings import (
     LocalSettings,
 )
 from src.notifications import EmailSenderInterface, EmailSender
-from src.securuty import JWTAuthManagerInterface, JWTAuthManager
+from src.security import JWTAuthManagerInterface, JWTAuthManager
 from src.storage import S3StorageInterface, S3StorageClient
 
 

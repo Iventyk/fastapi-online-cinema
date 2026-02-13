@@ -5,7 +5,7 @@ from typing import Optional, cast, Any
 from jose import jwt, JWTError, ExpiredSignatureError
 
 from src.exceptions import TokenExpiredError, InvalidTokenError
-from src.securuty import JWTAuthManagerInterface
+from src.security import JWTAuthManagerInterface
 
 
 class JWTAuthManager(JWTAuthManagerInterface):
