@@ -113,19 +113,17 @@ async def clear_cart(
         user_id=user_id, authenticated_user=authenticated_user
     )
 
-    query = (
-        select(Cart)
-        .where(Cart.user_id == user_id)
-        .options(selectinload(Cart.items))
-    )
-    result = await db.execute(query)
-    cart = result.scalar_one_or_none()
+    query = select(Cart.id).where(Cart.user_id == user_id)
+    cart_id = await db.scalar(query)
 
-    if not cart or not cart.items:
+    if not cart_id:
         raise CartItemsDoesNotExist("Cart is already empty")
 
-    for item in cart.items:
-        await db.delete(item)
+    delete_query = delete(CartItem).where(CartItem.cart_id == cart_id)
+    result = await db.execute(delete_query)
+
+    if result.rowcount == 0:  # type: ignore
+        raise CartItemsDoesNotExist("Cart is already empty")
 
     await db.commit()
 
@@ -157,9 +155,10 @@ async def get_cart(
         cart = Cart(user_id=user_id)
         db.add(cart)
         await db.commit()
-
-        result = await db.execute(query)
-        cart = result.scalar_one()
+        await db.refresh(cart)
+        return CartReadSchema(
+            id=cart.id, user_id=cart.user_id, items=[]
+        )  # type: ignore[call-arg]
 
     return CartReadSchema.model_validate(cart)
 
