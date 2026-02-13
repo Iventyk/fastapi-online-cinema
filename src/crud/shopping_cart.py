@@ -156,11 +156,7 @@ async def get_cart(
         db.add(cart)
         await db.commit()
         await db.refresh(cart)
-        return CartReadSchema(
-            id=cart.id,
-            user_id=cart.user_id,
-            items=[]
-        )
+        return CartReadSchema(id=cart.id, user_id=cart.user_id, items=[])
 
     return CartReadSchema.model_validate(cart)
 
