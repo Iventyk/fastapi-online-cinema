@@ -90,11 +90,14 @@ async def create_payment_for_order(
 async def get_user_payment_history(
     *, db: Annotated[AsyncSession, Depends(get_db)], user_id: int
 ) -> Sequence[Payment]:
-    """
-    Retrieve all payments for a user.
-    """
     result = await db.execute(
-        select(Payment).where(Payment.user_id == user_id)
+        select(Payment)
+        .options(
+            selectinload(Payment.user),
+            selectinload(Payment.order),
+            selectinload(Payment.items),
+        )
+        .where(Payment.user_id == user_id)
     )
     return result.scalars().all()
 
@@ -105,10 +108,12 @@ async def get_all_payments(
     user_id: int | None = None,
     status: PaymentStatusEnum | None = None,
 ) -> Sequence[Payment]:
-    """
-    Retrieve all payments with optional filters (admin use).
-    """
-    query = select(Payment)
+    query = select(Payment).options(
+        selectinload(Payment.user),
+        selectinload(Payment.order),
+        selectinload(Payment.items),
+    )
+
     if user_id:
         query = query.where(Payment.user_id == user_id)
     if status:
