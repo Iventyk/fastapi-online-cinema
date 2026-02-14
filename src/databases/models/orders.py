@@ -35,8 +35,8 @@ class Order(Base):
     status: Mapped[StatusEnum] = mapped_column(
         Enum(StatusEnum), default=StatusEnum.PENDING, nullable=False
     )
-    total_amount: Mapped[Optional[Decimal]] = mapped_column(
-        Numeric(10, 2), nullable=True
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False, default=Decimal("0.00")
     )
 
     user_id: Mapped[int] = mapped_column(
@@ -68,7 +68,7 @@ class OrderItem(Base):
         ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
     )
     movie_id: Mapped[int] = mapped_column(
-        ForeignKey("movies.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("movies.id", ondelete="SET NULL"), nullable=True
     )
 
     order: Mapped["Order"] = relationship("Order", back_populates="items")
