@@ -17,7 +17,16 @@ from src.databases.models import UserGroupEnum
 payment_router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
-@payment_router.post("/{order_id}", response_model=PaymentCreateResponseSchema)
+@payment_router.post(
+    "/{order_id}",
+    response_model=PaymentCreateResponseSchema,
+    summary="Create payment for order",
+    description="Creates Stripe PaymentIntent and returns client_secret",
+    responses={
+        400: {"description": "Order cannot be paid"},
+        401: {"description": "Unauthorized"},
+    },
+)
 async def create_payment(
     order_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
