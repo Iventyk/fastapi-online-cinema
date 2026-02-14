@@ -97,16 +97,17 @@ async def do_pswd_reset_confirm(
     data: ResetPasswordRequestSchema,
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> CommonResponseSchema:
-    smtp = await db.execute(
+    result = await db.execute(
         select(PasswordResetTokenModel)
         .where(PasswordResetTokenModel.token == data.token)
         .options(joinedload(PasswordResetTokenModel.user))
     )
-    existing_token = smtp.scalar_one_or_none()
+    existing_token = result.scalar_one_or_none()
+
     if not existing_token:
         raise IncorrectCredentials(message="Incorrect Token")
 
-    user = await db.get(UserModel, existing_token.user_id)
+    user = existing_token.user
 
     if user is None:
         raise UserNotExist(message="User associated with token not found")
