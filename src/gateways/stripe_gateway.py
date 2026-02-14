@@ -1,5 +1,4 @@
 import stripe
-from typing import Any
 
 from src.config import get_settings
 from src.gateways.base import PaymentGatewayInterface
@@ -13,12 +12,20 @@ class StripeGateway(PaymentGatewayInterface):
     """Stripe payment gateway implementation."""
 
     async def create_payment_intent(
-        self, *, amount: int, currency: str, metadata: dict[str, Any]
-    ) -> dict[str, Any]:
+        self,
+        *,
+        amount: int,
+        currency: str,
+        metadata: dict[str, str],
+    ) -> dict:
+        """
+        Create Stripe PaymentIntent (card only, no redirects).
+        """
         intent = stripe.PaymentIntent.create(
             amount=amount,
             currency=currency,
+            payment_method_types=["card"],
             metadata=metadata,
-            automatic_payment_methods={"enabled": True},
         )
+
         return intent

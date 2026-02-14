@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_DOWN
-from typing import Annotated, Any, Sequence
+from typing import Annotated, Sequence
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,12 +12,9 @@ from src.databases.models.payment import Payment, PaymentStatusEnum
 from src.gateways.stripe_gateway import StripeGateway
 from src.repositories.payment import (
     create_payment,
-    update_payment_status,
-    get_payment_by_external_id,
 )
 from src.repositories.payment_item import create_payment_item
 from src.exceptions.payments import OrderNotPayable
-from src.notifications.emails import EmailSender
 
 MIN_CHARGE_USD = Decimal("0.50")
 
@@ -29,8 +26,8 @@ async def create_payment_for_order(
     order_id: int,
 ) -> tuple[str, Payment]:
     """
-    Create a Stripe payment intent for an order, save payment and payment items
-    Email confirmation is sent asynchronously via Celery task, not here
+    Create Stripe PaymentIntent and store Payment in PENDING state.
+    Order status is NOT changed here.
     """
     result = await db.execute(
         select(Order)
@@ -43,13 +40,12 @@ async def create_payment_for_order(
         raise OrderNotPayable("Order cannot be paid")
 
     total_amount = sum(
-        (item.price_at_order for item in order.items), Decimal("0.00")
+        (item.price_at_order for item in order.items),
+        Decimal("0.00"),
     )
 
     if total_amount < MIN_CHARGE_USD:
-        raise ValueError(
-            f"Total amount ${total_amount} is below the minimum charge for USD"
-        )
+        raise OrderNotPayable("Order total is below minimum charge")
 
     amount_in_cents = int(
         (total_amount * 100).quantize(Decimal("1"), rounding=ROUND_DOWN)
@@ -59,72 +55,36 @@ async def create_payment_for_order(
     intent = await stripe_gateway.create_payment_intent(
         amount=amount_in_cents,
         currency="usd",
-        metadata={"order_id": str(order.id), "user_id": str(user_id)},
+        metadata={
+            "order_id": str(order.id),
+            "user_id": str(user_id),
+        },
     )
 
-    payment = await create_payment(
-        db=db,
-        user_id=user_id,
-        order_id=order.id,
-        amount=total_amount,
-        external_payment_id=intent["id"],
-    )
-
-    for item in order.items:
-        await create_payment_item(
+    try:
+        payment = await create_payment(
             db=db,
-            payment_id=payment.id,
-            order_item_id=item.id,
-            price_at_payment=item.price_at_order,
+            user_id=user_id,
+            order_id=order.id,
+            amount=total_amount,
+            external_payment_id=intent["id"],
         )
 
-    order.status = StatusEnum.PAID
-    await db.commit()
+        for item in order.items:
+            await create_payment_item(
+                db=db,
+                payment_id=payment.id,
+                order_item_id=item.id,
+                price_at_payment=item.price_at_order,
+            )
+
+        await db.commit()
+
+    except Exception:
+        await db.rollback()
+        raise
 
     return intent["client_secret"], payment
-
-
-async def handle_stripe_webhook(
-    *,
-    db: Annotated[AsyncSession, Depends(get_db)],
-    event: dict[str, Any],
-    email_service: EmailSender,
-) -> None:
-    """
-    Handle Stripe webhook events to update Payment and Order status.
-    """
-    payment_id = event.get("data", {}).get("object", {}).get("id")
-    status = event.get("type")
-
-    payment = await get_payment_by_external_id(
-        db=db, external_payment_id=payment_id
-    )
-    if not payment:
-        raise HTTPException(status_code=404, detail="Payment not found")
-
-    if status == "payment_intent.succeeded":
-        await update_payment_status(
-            db=db, payment=payment, status=PaymentStatusEnum.SUCCESSFUL
-        )
-        payment.order.status = StatusEnum.PAID
-        await db.commit()
-
-        await email_service._send_email(
-            recipient=payment.user.email,
-            subject="Payment Successful",
-            html_content=f"<p>Your payment of ${payment.amount} "
-            f"for order #{payment.order_id} was successful.</p>",
-        )
-
-    elif status in (
-        "payment_intent.canceled",
-        "payment_intent.payment_failed",
-    ):
-        await update_payment_status(
-            db=db, payment=payment, status=PaymentStatusEnum.CANCELED
-        )
-        payment.order.status = StatusEnum.CANCELLED
-        await db.commit()
 
 
 async def get_user_payment_history(
