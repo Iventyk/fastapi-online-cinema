@@ -87,8 +87,10 @@ async def create_new_user(
         await db.commit()
         await db.refresh(user)
 
-        activation_link = ("http://127.0.0.1:8000/accounts/activate/"
-                           f"?activation_token={token}")
+        activation_link = (
+            "http://127.0.0.1:8000/accounts/activate/"
+            f"?activation_token={token}"
+        )
 
         send_activation_email_task.delay(
             email=user.email, activation_link=activation_link
