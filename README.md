@@ -366,6 +366,78 @@ All email sending is handled asynchronously via Celery tasks, ensuring non-block
 
 ---
 
+## Orders Module Overview
+
+**Order Status Lifecycle** – Tracks the state of a transaction from creation to finalization.
+```
+PENDING – payment is in progress
+PAID – movie is already purchased (cannot be added to cart again)
+CANCELED – transaction failed
+```
+
+**Orders Models:**
+
+**Order** - Represents a collection of movies a user intends to purchase.
+```
+Fields:
+id – primary key
+user_id – foreign key to users
+status – enum (PENDING, PAID, CANCELED)
+total_amount – total price (Decimal)
+created_at – timestamp
+
+Relationships:
+One-to-many with OrderItemModel (Order.items)
+Many-to-one with UserModel (Order.user)
+```
+
+**OrderItem** - A snapshot of a movie within a specific order.
+```
+Fields:
+id – primary key
+order_id – foreign key to orders
+movie_id – foreign key to movies
+price_at_order – the price of the movie at the time the order was created (Decimal)
+
+Notes:
+Ensures historical financial accuracy even if movie prices change later.
+```
+
+**Validation & Business Logic** - Ensures data integrity and security.
+
+```
+1. Smart Creation (Filtering):
+   - Excludes movies already purchased (PAID).
+   - Excludes movies already in another PENDING order.
+   - Filters out unavailable (deleted or region-locked) movies.
+   - Function: create_order(...) -> returns list of 'removed_items'.
+
+2. Integrity Checks:
+   - Prevents creating an order from an empty cart.
+   - Ensures users can only access their own orders.
+
+3. Price Revalidation:
+   - Re-scans current movie prices before payment finalization.
+   - Updates 'total_amount' and 'price_at_order' if database prices changed.
+   - Function: revalidate_order_prices(order_id)
+
+4. Order Cancellation:
+   - Users can cancel PENDING orders before payment.
+   - PAID orders require a refund request (direct cancellation blocked).
+```
+
+**API Endpoints:**
+
+**User Functionality:**
+- `POST /orders/` — Create a new order from cart (with auto-filtering).
+- `GET /orders/` — Get all orders of the authenticated user.
+- `PATCH /orders/{order_id}/cancel` — Cancel a specific pending order.
+
+**Admin/Moderator Functionality:**
+- `GET /orders/admin` — Get all system orders with filters:
+   - By User ID
+   - By Status (pending, paid, canceled)
+   - By Date Range
 ## Stripe Payment Integration
 
 This section explains how to set up and test Stripe payments for the application.

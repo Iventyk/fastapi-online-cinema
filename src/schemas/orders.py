@@ -32,16 +32,30 @@ class OrderItemReadSchema(OrderItemBaseSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("price_at_order", mode="before")
+    @classmethod
+    def format_decimal(cls, v):
+        if isinstance(v, decimal.Decimal):
+            return v.quantize(decimal.Decimal("1.00"))
+        return v
+
 
 class OrderReadSchema(OrderBaseSchema):
     id: int
     user_id: int
     created_at: datetime
     status: StatusEnum
-    total_amount: Optional[decimal.Decimal]
+    total_amount: decimal.Decimal
     items: List[OrderItemReadSchema]
 
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("total_amount", mode="before")
+    @classmethod
+    def format_decimal(cls, v):
+        if isinstance(v, decimal.Decimal):
+            return v.quantize(decimal.Decimal("1.00"))
+        return v
 
 
 class OrderStatusUpdateSchema(BaseModel):

@@ -107,19 +107,38 @@ async def create_order(
 
     prices = await get_movies_prices(db, valid_ids)
 
-    total_amount = Decimal(sum(prices.values())) if prices else Decimal("0.00")
-    new_order = Order(user_id=user_id, total_amount=total_amount)
-    db.add(new_order)
-    await db.flush()
+    try:
+        async with db.begin_nested():
+            total_amount = (
+                Decimal(sum(prices.values())) if prices else Decimal("0.00")
+            )
+            new_order = Order(user_id=user_id, total_amount=total_amount)
+            db.add(new_order)
+            await db.flush()
 
-    for movie_id, price in prices.items():
-        item = OrderItem(
-            order_id=new_order.id, movie_id=movie_id, price_at_order=price
-        )
-        db.add(item)
+            for movie_id, price in prices.items():
+                item = OrderItem(
+                    order_id=new_order.id,
+                    movie_id=movie_id,
+                    price_at_order=price,
+                )
+                db.add(item)
 
-    await db.commit()
-    await db.refresh(new_order)
+        await db.commit()
+
+    except Exception as e:
+        await db.rollback()
+        raise e
+
+    stmt = (
+        select(Order)
+        .where(Order.id == new_order.id)
+        .options(selectinload(Order.items))
+    )
+
+    result = await db.execute(stmt)
+    new_order = result.scalar_one()
+
     return {
         "order": new_order,
         "removed_purchased": list(purchased),
@@ -170,7 +189,11 @@ async def get_all_orders_admin(
 async def cancel_order(
     db: Annotated[AsyncSession, Depends(get_db)], order_id: int, user_id: int
 ) -> Order:
-    stmt = select(Order).where(Order.id == order_id, Order.user_id == user_id)
+    stmt = (
+        select(Order)
+        .where(Order.id == order_id, Order.user_id == user_id)
+        .options(selectinload(Order.items))
+    )
     result = await db.execute(stmt)
     order = result.scalar_one_or_none()
 
@@ -188,10 +211,14 @@ async def cancel_order(
     if order.status != StatusEnum.PENDING:
         raise OrderCancellationNotPossible("This order cannot be cancelled")
 
-    order.status = StatusEnum.CANCELLED
-    await db.commit()
-    await db.refresh(order)
-    return order
+    try:
+        order.status = StatusEnum.CANCELLED
+        await db.commit()
+        await db.refresh(order)
+        return order
+    except Exception as e:
+        await db.rollback()
+        raise e
 
 
 async def revalidate_order_prices(
@@ -211,19 +238,23 @@ async def revalidate_order_prices(
     if order.status != StatusEnum.PENDING:
         return order
 
-    new_total = Decimal("0.00")
+    try:
+        new_total = Decimal("0.00")
 
-    for item in order.items:
-        movie_stmt = select(Movie.price).where(Movie.id == item.movie_id)
-        movie_result = await db.execute(movie_stmt)
-        current_price = movie_result.scalar_one_or_none()
+        for item in order.items:
+            movie_stmt = select(Movie.price).where(Movie.id == item.movie_id)
+            movie_result = await db.execute(movie_stmt)
+            current_price = movie_result.scalar_one_or_none()
 
-        if current_price is not None:
-            item.price_at_order = Decimal(str(current_price))
-            new_total += item.price_at_order
+            if current_price is not None:
+                item.price_at_order = Decimal(str(current_price))
+                new_total += item.price_at_order
 
-    order.total_amount = new_total
+        order.total_amount = new_total
 
-    await db.commit()
-    await db.refresh(order)
-    return order
+        await db.commit()
+        await db.refresh(order)
+        return order
+    except Exception as e:
+        await db.rollback()
+        raise e
