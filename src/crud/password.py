@@ -43,30 +43,28 @@ async def do_pswd_restore_request(
 
     if not user or not user.is_active:
         return CommonResponseSchema(message=success_msg)
-
-    await db.execute(
-        delete(PasswordResetTokenModel).where(
-            PasswordResetTokenModel.user_id == user.id
+    try:
+        await db.execute(
+            delete(PasswordResetTokenModel).where(
+                PasswordResetTokenModel.user_id == user.id
+            )
         )
-    )
-
-    new_token = jwt_manager.create_reset_token()
-    reset_token_record = PasswordResetTokenModel.create(
-        user_id=user.id,
-        token=new_token,
-    )
-
-    db.add(reset_token_record)
-    await db.commit()
-
-    reset_link = "http://127.0.0.1:8000/accounts/password-reset/"
-
-    send_password_reset_email_task.delay(
-        email=email,
-        reset_link=reset_link,
-    )
-
-    return CommonResponseSchema(message=success_msg)
+        new_token = jwt_manager.create_reset_token()
+        reset_token_record = PasswordResetTokenModel.create(
+            user_id=user.id,
+            token=new_token,
+        )
+        db.add(reset_token_record)
+        await db.commit()
+        reset_link = "http://127.0.0.1:8000/accounts/password-reset/"
+        send_password_reset_email_task.delay(
+            email=email,
+            reset_link=reset_link,
+        )
+        return CommonResponseSchema(message=success_msg)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def change_password(
@@ -86,6 +84,7 @@ async def change_password(
         user.password = new_password.new_password
         await db.commit()
     except SQLAlchemyError:
+        await db.rollback()
         raise PasswordChangeError("Incorrect password")
 
     return CommonResponseSchema(
@@ -103,25 +102,23 @@ async def do_pswd_reset_confirm(
         .options(joinedload(PasswordResetTokenModel.user))
     )
     existing_token = result.scalar_one_or_none()
-
     if not existing_token:
         raise IncorrectCredentials(message="Incorrect Token")
-
     user = existing_token.user
-
     if user is None:
         raise UserNotExist(message="User associated with token not found")
 
     user.password = data.password
-    await db.commit()
-
-    login_link = "http://127.0.0.1:8000/accounts/login/"
-
-    send_password_reset_complete_email_task.delay(
-        email=data.email,
-        login_link=login_link,
-    )
-
-    return CommonResponseSchema(
-        message="User password has been restored successfully",
-    )
+    try:
+        await db.commit()
+        login_link = "http://127.0.0.1:8000/accounts/login/"
+        send_password_reset_complete_email_task.delay(
+            email=data.email,
+            login_link=login_link,
+        )
+        return CommonResponseSchema(
+            message="User password has been restored successfully",
+        )
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

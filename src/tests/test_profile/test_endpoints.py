@@ -29,14 +29,15 @@ class TestProfileEndpoints:
 
     @patch("src.crud.profile._upload_avatar_and_get_url")
     async def test_create_profile_endpoint_success(
-            self, mock_upload, client: AsyncClient, async_session: AsyncSession
+        self, mock_upload, client: AsyncClient, async_session: AsyncSession
     ):
         user = await self._setup_user(async_session, "profile@example.com")
         mock_upload.return_value = "http://s3.com/avatar.jpg"
 
-        login_res = await client.post("/accounts/login/", json={
-            "email": "profile@example.com", "password": "Password123!"
-        })
+        login_res = await client.post(
+            "/accounts/login/",
+            json={"email": "profile@example.com", "password": "Password123!"},
+        )
         token = login_res.json()["access_token"]
 
         form_data = {
@@ -44,7 +45,7 @@ class TestProfileEndpoints:
             "last_name": "Doe",
             "gender": "male",
             "date_of_birth": "1990-01-01",
-            "info": "Hello world"
+            "info": "Hello world",
         }
         files = {"avatar": ("avatar.jpg", b"fake-image-content", "image/jpeg")}
 
@@ -54,7 +55,7 @@ class TestProfileEndpoints:
             f"/profile/create/{user.id}",
             data=form_data,
             files=files,
-            headers=headers
+            headers=headers,
         )
 
         assert response.status_code == 201
@@ -63,10 +64,9 @@ class TestProfileEndpoints:
         assert data["avatar"] == "http://s3.com/avatar.jpg"
         assert data["user_id"] == user.id
 
-
     @patch("src.crud.profile._upload_avatar_and_get_url")
     async def test_partial_update_profile_success(
-            self, mock_upload, client: AsyncClient, async_session: AsyncSession
+        self, mock_upload, client: AsyncClient, async_session: AsyncSession
     ):
         user = await self._setup_user(async_session, "update@example.com")
         profile = UserProfileModel(
@@ -76,23 +76,24 @@ class TestProfileEndpoints:
             gender=GenderEnum.MALE,
             date_of_birth=date(2000, 1, 1),
             info="Some info",
-            avatar="http://old.jpg"
+            avatar="http://old.jpg",
         )
         async_session.add(profile)
         await async_session.commit()
 
         user.profile_id = user.id
 
-        login_res = await client.post("/accounts/login/", json={
-            "email": "update@example.com", "password": "Password123!"
-        })
+        login_res = await client.post(
+            "/accounts/login/",
+            json={"email": "update@example.com", "password": "Password123!"},
+        )
         token = login_res.json()["access_token"]
 
         headers = {"Authorization": f"Bearer {token}"}
         response = await client.patch(
             f"/profile/{user.id}",
             data={"first_name": "Newname"},
-            headers=headers
+            headers=headers,
         )
 
         assert response.status_code == 200

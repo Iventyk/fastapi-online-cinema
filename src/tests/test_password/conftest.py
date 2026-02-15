@@ -15,7 +15,6 @@ from src.databases.models.base import Base
 from src.main import app
 from src.config.limiter import limiter
 
-
 limiter.enabled = False
 
 
@@ -38,8 +37,9 @@ async def async_session() -> AsyncGenerator[Any]:
 
 
 @pytest_asyncio.fixture
-async def client(async_session: AsyncSession) -> AsyncGenerator[
-    AsyncClient, None]:
+async def client(
+    async_session: AsyncSession,
+) -> AsyncGenerator[AsyncClient, None]:
     # Override get_db to return our test session
     async def _get_test_db():
         yield async_session
@@ -58,5 +58,6 @@ async def client(async_session: AsyncSession) -> AsyncGenerator[
 @pytest.fixture(autouse=True)
 def mock_celery():
     from src.tasks import send_password_reset_email_task
+
     send_password_reset_email_task.delay = MagicMock()
     return send_password_reset_email_task.delay

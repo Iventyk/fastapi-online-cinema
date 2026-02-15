@@ -3,6 +3,7 @@ from uuid import uuid4
 from zoneinfo import available_timezones
 
 from fastapi import Form, Depends, UploadFile
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -95,8 +96,12 @@ async def create_user_profile(
         user=operated_acc,
     )
     db.add(db_profile)
-    await db.commit()
-    await db.refresh(db_profile)
+    try:
+        await db.commit()
+        await db.refresh(db_profile)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return ProfileReadSchema.model_validate(db_profile)
 
 
@@ -125,9 +130,13 @@ async def update_user_profile(
     for key, value in update_dict.items():
         setattr(profile, key, value)
 
-    await db.commit()
-    await db.refresh(profile)
-    return ProfileReadSchema.model_validate(profile)
+    try:
+        await db.commit()
+        await db.refresh(profile)
+        return ProfileReadSchema.model_validate(profile)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def delete_profile(
@@ -135,9 +144,12 @@ async def delete_profile(
     account_id: int,
 ) -> CommonResponseSchema:
     profile = await _get_profile_by_id(account_id, db)
-
-    await db.delete(profile)
-    await db.commit()
-    return CommonResponseSchema(
-        message="Profile with provided id has been deleted"
-    )
+    try:
+        await db.delete(profile)
+        await db.commit()
+        return CommonResponseSchema(
+            message="Profile with provided id has been deleted"
+        )
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

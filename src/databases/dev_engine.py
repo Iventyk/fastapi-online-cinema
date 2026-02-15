@@ -1,5 +1,6 @@
 from typing import AsyncGenerator
 
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
@@ -39,4 +40,11 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
 
     async with AsyncSessionLocal() as db:
-        yield db
+        try:
+            yield db
+            await db.commit()
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
+        finally:
+            await db.close()
