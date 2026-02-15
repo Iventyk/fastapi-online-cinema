@@ -1,8 +1,37 @@
-![coverage](https://img.shields.io/badge/coverage-0%25-red)
-
 # FastAPI Online Cinema
 
+An Online Cinema is a digital platform that allows users to select, watch, and purchase access to movies and other video materials via the internet. 
+
 This is the backend API for the FastAPI Online Cinema project.
+
+### Tech Stack & Tools
+
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.128.0-009688?logo=fastapi&logoColor=white)
+![Uvicorn](https://img.shields.io/badge/Uvicorn-0.40.0-4DB33D?logo=python&logoColor=white)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.46-52B0E7?logo=sqlalchemy&logoColor=white)
+![Alembic](https://img.shields.io/badge/Alembic-1.18.3-000000?logo=python&logoColor=white)
+![Pydantic](https://img.shields.io/badge/Pydantic-2.12.5-1C83C6?logo=python&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-5.6.2-FF6600?logo=celery&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-7.1.0-DC382D?logo=redis&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-14.3.0-635BFF?logo=stripe&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-latest-2496ED?logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker%20Compose-latest-2496ED?logo=docker&logoColor=white)
+![Poetry](https://img.shields.io/badge/Poetry-latest-000000?logo=python&logoColor=white)
+
+![Pytest](https://img.shields.io/badge/Pytest-9.0.2-0A74DA?logo=pytest&logoColor=white)
+![Pytest-Asyncio](https://img.shields.io/badge/Pytest--Asyncio-1.3.0-0A74DA?logo=pytest&logoColor=white)
+![Black](https://img.shields.io/badge/Black-26.1.0-000000?logo=python&logoColor=white)
+![Flake8](https://img.shields.io/badge/Flake8-7.3.0-000000?logo=python&logoColor=white)
+![Mypy](https://img.shields.io/badge/Mypy-1.19.1-000000?logo=python&logoColor=white)
+
+![Swagger](https://img.shields.io/badge/OpenAPI%203-latest-000000?logo=openapiinitiative&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-latest-2088FF?logo=githubactions&logoColor=white)
+
+### Test Coverage
+
+[![codecov](https://codecov.io/github/Iventyk/fastapi-online-cinema/graph/badge.svg?token=XU2A2361K3)](https://codecov.io/github/Iventyk/fastapi-online-cinema)
+
 
 ## Getting Started
 
