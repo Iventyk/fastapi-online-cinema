@@ -3,6 +3,7 @@ from typing import Any
 
 from src.config.celery_app import celery_instance
 from src.config import get_email_sender, get_settings
+from src.notifications.emails import EmailSender
 
 settings = get_settings()
 email_sender = get_email_sender(settings)
@@ -71,19 +72,39 @@ def send_password_reset_complete_email_task(
     )
 
 
-@celery_instance.task(name="send_payment_success_email_task")
+@celery_instance.task(
+    bind=True,
+    name="send_payment_success_email_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_kwargs={"max_retries": 5},
+)
 def send_payment_success_email_task(
-    email: str, amount: float, order_id: int
+    self, email: str, amount: float, order_id: int
 ) -> Any:
-    return asyncio.run(
-        email_sender.send_payment_success_email(email, amount, order_id)  # type: ignore
-    )
+    try:
+        return asyncio.run(
+            email_sender.send_payment_success_email(email, amount, order_id)  # type: ignore
+        )
+    except Exception as exc:
+        raise self.retry(exc=exc)
 
 
-@celery_instance.task(name="send_payment_failed_email_task")
+@celery_instance.task(
+    bind=True,
+    name="send_payment_failed_email_task",
+    autoretry_for=(Exception,),
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_kwargs={"max_retries": 5},
+)
 def send_payment_failed_email_task(
-    email: str, amount: float, order_id: int
+    self, email: str, amount: float, order_id: int
 ) -> Any:
-    return asyncio.run(
-        email_sender.send_payment_failed_email(email, amount, order_id)  # type: ignore
-    )
+    try:
+        return asyncio.run(
+            email_sender.send_payment_failed_email(email, amount, order_id)  # type: ignore
+        )
+    except Exception as exc:
+        raise self.retry(exc=exc)

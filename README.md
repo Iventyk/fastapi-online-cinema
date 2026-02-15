@@ -295,7 +295,7 @@ The payment system allows users to pay for orders using Stripe and receive email
 - Users can view a history of all their payments, including:
   - Date and time of payment
   - Amount
-  - Status (`successful`, `canceled`, `refunded`)
+  - Status (`pending`, `successful`, `canceled`, `refunded`)
   - Itemized details of each order
 
 #### API Endpoints
@@ -366,5 +366,45 @@ All email sending is handled asynchronously via Celery tasks, ensuring non-block
 
 ---
 
+## Stripe Payment Integration
 
+This section explains how to set up and test Stripe payments for the application.
 
+### 1. Stripe Account Setup
+1. Register or log in to your [Stripe Dashboard](https://dashboard.stripe.com/).
+2. Create an API key and a webhook secret for your environment.
+3. Add them to your `.env` or environment variables:
+
+`STRIPE_API_KEY=your_stripe_api_key`
+`STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret`
+
+### 2. Install Stripe CLI
+If you haven't installed it yet, follow instructions here: [Stripe CLI](https://docs.stripe.com/stripe-cli).
+
+### 3. Login to Stripe CLI
+Run:
+
+`stripe login`
+
+Follow the browser authentication flow.
+
+### 4. Listen for Webhooks
+Forward Stripe events to your local API:
+
+`stripe listen --forward-to localhost:8000/webhooks/stripe`
+
+This allows your local application to receive Stripe webhook events in real time.
+
+### 5. Test Payments
+Create a payment intent and confirm it using the Stripe CLI:
+
+`stripe payment_intents confirm <PAYMENT_INTENT_ID> --payment-method pm_card_visa`
+
+Replace `<PAYMENT_INTENT_ID>` with the actual payment intent ID from your Stripe dashboard.
+
+### 6. Notes
+- Payment success/failure emails are sent automatically via Celery tasks.
+- Ensure MailHog (or your SMTP server) is running to view test emails.
+- Use pm_card_visa for testing successful payments, and other test payment methods for simulating different scenarios.
+
+---

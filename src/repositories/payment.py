@@ -3,6 +3,7 @@ from typing import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.databases.models.payment import Payment, PaymentStatusEnum
 
@@ -20,7 +21,7 @@ async def create_payment(
         order_id=order_id,
         amount=amount,
         external_payment_id=external_payment_id,
-        status=PaymentStatusEnum.SUCCESSFUL,
+        status=PaymentStatusEnum.PENDING,
     )
     db.add(payment)
     await db.flush()
@@ -49,9 +50,16 @@ async def get_user_payments(
 async def get_payment_by_external_id(
     *, db: AsyncSession, external_payment_id: str
 ) -> Payment | None:
+    """
+    Retrieve payment by external Stripe ID
+    with eagerly loaded order and user relationships.
+    """
     result = await db.execute(
-        select(Payment).where(
-            Payment.external_payment_id == external_payment_id
+        select(Payment)
+        .options(
+            selectinload(Payment.order),
+            selectinload(Payment.user),
         )
+        .where(Payment.external_payment_id == external_payment_id)
     )
     return result.scalar_one_or_none()
