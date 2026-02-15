@@ -118,8 +118,8 @@ async def update_user_profile(
     profile = await _get_profile_by_id(account_id, db)
 
     update_dict = profile_data.model_dump(exclude_unset=True)
-    avatar = update_dict.pop("avatar")
-    if avatar:
+    if update_dict.get("avatar", None):
+        avatar = update_dict.pop("avatar")
         profile.avatar = await _upload_avatar_and_get_url(avatar, s3_storage)
 
     for key, value in update_dict.items():
