@@ -2,18 +2,13 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - "main"
-      - "develop"
+    branches: ["main", "develop"]
   pull_request:
-    branches:
-      - "main"
-      - "develop"
+    branches: ["main", "develop"]
 
 jobs:
-  test:
+  lint-and-type-check:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -39,9 +34,59 @@ jobs:
         run: |
           poetry run mypy .
 
-      - name: Run tests
+  test:
+    needs: lint-and-type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Create .env file
         run: |
-          poetry run pytest --cov=./ --cov-report=xml
+          touch .env
+          echo "POSTGRES_DB=bbc_cinema_db" >> .env
+          echo "POSTGRES_DB_PORT=5432" >> .env
+          echo "POSTGRES_USER=admin" >> .env
+          echo "POSTGRES_PASSWORD=some_password" >> .env
+          echo "POSTGRES_HOST=cinema_db" >> .env
+          echo "PGADMIN_DEFAULT_EMAIL=admin@gmail.com" >> .env
+          echo "PGADMIN_DEFAULT_PASSWORD=admin" >> .env
+          echo "SECRET_KEY_ACCESS=838qKq7dGp34hWij3c8txA5ZD2qm9ybt" >> .env
+          echo "SECRET_KEY_REFRESH=cFzRk8kllHMW71wQKLXBqDzl24fkhisw" >> .env
+          echo "JWT_SIGNING_ALGORITHM=HS256" >> .env
+          echo "MAILHOG_USER=admin" >> .env
+          echo "MAILHOG_PASSWORD=some_password" >> .env
+          echo "EMAIL_HOST=mailhog_cinema" >> .env
+          echo "EMAIL_PORT=1025" >> .env
+          echo "EMAIL_HOST_USER=ddc_cinema" >> .env
+          echo "EMAIL_HOST_PASSWORD=bbc_cinema_password" >> .env
+          echo "EMAIL_USE_TLS=False" >> .env
+          echo "MINIO_ROOT_USER=minioadmin" >> .env
+          echo "MINIO_ROOT_PASSWORD=bbc_cinema_password" >> .env
+          echo "MINIO_HOST=minio-cinema" >> .env
+          echo "MINIO_PORT=9000" >> .env
+          echo "MINIO_STORAGE=ddc-cinema-storage" >> .env
+          echo "MINIO_STORAGE_ENDPOINT=http://localhost:9000" >> .env
+          echo "REDIS_HOST=additional_db" >> .env
+          echo "REDIS_PORT=6379" >> .env
+          echo "DEV_DATABASE_URL=sqlite+aiosqlite:///bbc_cinema.db" >> .env
+          echo "DEV_SYNC_DATABASE_URL=sqlite:///bbc_cinema.db" >> .env
+          echo "DOCS_LOGIN=ADMIN" >> .env
+          echo "DOCS_PASSWORD=PASSWORD" >> .env
+
+      - name: Start services
+        run: docker compose up --build -d
+
+      - name: Wait for services (Optional but recommended)
+        run: sleep 10
+
+      - name: Run tests inside container
+        run: |
+          docker compose exec -T web poetry run pytest --cov=src
+
+      - name: Shutdown services
+        if: always()
+        run: docker compose down
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
