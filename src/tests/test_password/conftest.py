@@ -13,6 +13,10 @@ from sqlalchemy.ext.asyncio import (
 from src.databases import get_db
 from src.databases.models.base import Base
 from src.main import app
+from src.config.limiter import limiter
+
+limiter.enabled = False
+
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -53,7 +57,7 @@ async def client(
 
 @pytest.fixture(autouse=True)
 def mock_celery():
-    from src.tasks import send_activation_email_task
+    from src.tasks import send_password_reset_email_task
 
-    send_activation_email_task.delay = MagicMock()
-    return send_activation_email_task.delay
+    send_password_reset_email_task.delay = MagicMock()
+    return send_password_reset_email_task.delay

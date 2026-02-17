@@ -13,6 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from sqlalchemy.exc import SQLAlchemyError
 from starlette.responses import JSONResponse, HTMLResponse
 
 from src.config.limiter import limiter
@@ -99,11 +100,11 @@ async def get_open_api_endpoint(
     )
 
 
-# @app.exception_handler(RequestValidationError)
-# async def validation_exception_handler(
-#     request: Request, exc: RequestValidationError
-# ) -> JSONResponse:
-#     return JSONResponse(
-#         status_code=status.HTTP_400_BAD_REQUEST,
-#         content=jsonable_encoder({"detail": exc.errors()}),
-#     )
+@app.exception_handler(SQLAlchemyError)
+async def validation_exception_handler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=jsonable_encoder({"detail": exc.errors()}),
+    )

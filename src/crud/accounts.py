@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi.params import Depends
 from pydantic import EmailStr
 from sqlalchemy import select, delete
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -85,23 +86,24 @@ async def create_new_user(
 
         await db.commit()
         await db.refresh(user)
-    except Exception:
+
+        activation_link = (
+            "http://127.0.0.1:8000/accounts/activate/"
+            f"?activation_token={token}"
+        )
+
+        send_activation_email_task.delay(
+            email=user.email, activation_link=activation_link
+        )
+
+        return UserReadSchema(
+            id=user.id,
+            email=user.email,
+            is_active=user.is_active,
+        )
+    except SQLAlchemyError:
         await db.rollback()
         raise
-
-    activation_link = (
-        f"http://127.0.0.1:8000/accounts/activate/?activation_token={token}"
-    )
-
-    send_activation_email_task.delay(
-        email=user.email, activation_link=activation_link
-    )
-
-    return UserReadSchema(
-        id=user.id,
-        email=user.email,
-        is_active=user.is_active,
-    )
 
 
 async def get_user_by_email(
@@ -169,19 +171,23 @@ async def login_user(
         user_id=user.id,
     )
     db.add(db_token)
-    await db.commit()
+    try:
+        await db.commit()
 
-    await sync_guest_cart_to_user(
-        db=db,
-        user_id=user.id,
-        guest_movie_ids=login_data.guest_cart_items,
-    )
+        await sync_guest_cart_to_user(
+            db=db,
+            user_id=user.id,
+            guest_movie_ids=login_data.guest_cart_items,
+        )
 
-    return LoginResponseSchema(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer",
-    )
+        return LoginResponseSchema(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+        )
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def activate_user(
@@ -202,10 +208,13 @@ async def activate_user(
     user = token_record.user
 
     if user.is_active:
-        await db.delete(token_record)
-        await db.commit()
-        return CommonResponseSchema(message="User already activated")
-
+        try:
+            await db.delete(token_record)
+            await db.commit()
+            return CommonResponseSchema(message="User already activated")
+        except SQLAlchemyError:
+            await db.rollback()
+            raise
     if (
         token_record.expires_at.timestamp()
         < datetime.now(timezone.utc).timestamp()
@@ -213,18 +222,21 @@ async def activate_user(
         raise IncorrectCredentials(message="Activation token has expired")
 
     user.is_active = True
-    await db.delete(token_record)
-    await db.commit()
+    try:
+        await db.delete(token_record)
+        await db.commit()
+        login_link = "http://127.0.0.1:8000/accounts/login/"
 
-    login_link = "http://127.0.0.1:8000/accounts/login/"
+        send_activation_complete_email_task.delay(
+            email=user.email, login_link=login_link
+        )
 
-    send_activation_complete_email_task.delay(
-        email=user.email, login_link=login_link
-    )
-
-    return CommonResponseSchema(
-        message="Successfully activate your account",
-    )
+        return CommonResponseSchema(
+            message="Successfully activate your account",
+        )
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def reactivate_user_token(
@@ -258,9 +270,11 @@ async def reactivate_user_token(
         user_id=user.id,
     )
     db.add(recorded_token)
-
-    await db.commit()
-
+    try:
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     activation_link = (
         f"http://127.0.0.1:8000/accounts/activate/"
         f"?activation_token={new_token}"
@@ -282,8 +296,11 @@ async def logout_user(
     )
 
     await db.execute(stmt)
-    await db.commit()
-
+    try:
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return CommonResponseSchema(
         message="Successfully logged out from all devices",
     )
@@ -313,7 +330,11 @@ async def manual_operation(
         if not group:
             raise UserGroupNotExist(message="Permission does not exist")
         account_to_operate.group = group
-    await db.commit()
+    try:
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return UserReadSchema(
         id=account_to_operate.id,
         email=account_to_operate.email,
