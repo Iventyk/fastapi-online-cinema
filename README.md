@@ -32,6 +32,7 @@ This is the backend API for the FastAPI Online Cinema project.
 
 [![codecov](https://codecov.io/github/Iventyk/fastapi-online-cinema/graph/badge.svg?token=XU2A2361K3)](https://codecov.io/github/Iventyk/fastapi-online-cinema)
 
+---
 
 ## Getting Started
 
@@ -98,7 +99,9 @@ http://127.0.0.1:9001
 
 ```docker compose down```
 
-# Core Dependencies
+---
+
+## Core Dependencies
 ```
 imports:
 
@@ -123,6 +126,7 @@ current_user: Annotated[CurrentUser, Depends(get_current_user)]
 
 ```
 
+---
 
 ##  Authorization and Authentication Overview
 
@@ -206,9 +210,9 @@ Notes:
 Profile is optional but strictly one profile per user
 Automatically deleted when the user is deleted
 ```
-```
-DB Schema - https://dbdiagram.io/d/Accounts-app-675ef6bee763df1f00fd8ed1
-```
+
+[Accounts DB schema](https://dbdiagram.io/d/Accounts-app-675ef6bee763df1f00fd8ed1)
+
 **Token System**
 ```
 All tokens inherit from a shared abstract base.
@@ -225,6 +229,8 @@ Notes:
 Tokens are time-limited
 Cascade deletion ensures cleanup when a user is removed
 ```
+
+---
 
 ## Shopping Cart Module Overview
 **StatusEnum** - Defines the lifecycle of an order. Used in the Shopping Cart module to validate purchase history before adding items (preventing duplicate purchases).
@@ -264,6 +270,8 @@ Notes:
 Acts as a link between the user's cart and the movie catalog.
 Includes validation to prevent duplicate items in the same cart.
 ```
+[Cart DB schema](https://dbdiagram.io/d/Cart-app-675f0d88e763df1f00fed027)
+
 **Validation** - The module enforces strict rules to ensure data integrity and security.
 ```
 1. User Validation:
@@ -308,91 +316,6 @@ Workflow:
 Goal: ensures a seamless user experience where items added before authentication are not lost.
 ```
 
-
-## Payments
-
-### Overview
-The payment system allows users to pay for orders using Stripe and receive email notifications about their payment status. It also supports admin views and webhook handling for transaction validation.
-
----
-
-### User Functionality
-- Users can create a payment for an order.
-- After successful payment:
-  - The order status is updated to `PAID`.
-  - The user receives an email confirmation.
-- Users can view a history of all their payments, including:
-  - Date and time of payment
-  - Amount
-  - Status (`pending`, `successful`, `canceled`, `refunded`)
-  - Itemized details of each order
-
-#### API Endpoints
-- `POST /payments/{order_id}` — Create payment for a specific order. Returns `client_secret` for Stripe.
-- `GET /payments/` — Get all payments of the authenticated user.
-
----
-
-### Admin Functionality
-- Admins can view all payments with optional filters:
-  - By user ID
-  - By status (`successful`, `canceled`, `refunded`)
-- Only users with `ADMIN` permission can access admin endpoints.
-
-#### API Endpoints
-- `GET /payments/admin` — Get all payments (admin only) with filters.
-
----
-
-### Payment Processing
-- Uses Stripe as the payment gateway.
-- Validates:
-  - Total amount of the order
-  - Order status (`PENDING`)
-  - User authentication
-- Creates `Payment` and `PaymentItem` records in the database.
-- Triggers **Celery tasks** to send payment notification emails:
-  - `send_payment_success_email_task` — sent after successful payment
-  - `send_payment_failed_email_task` — sent if payment fails
-
----
-
-### Webhooks
-- `POST /webhooks/stripe` — Receives Stripe events to validate payments and update order/payment statuses.
-- Updates Payment and Order status automatically based on webhook event type.
-- Sends email notifications for successful or failed payments via Celery tasks.
-
----
-
-### Database Models
-- **Payment**
-  - `id: int`
-  - `user_id: int` — foreign key to users
-  - `order_id: int` — foreign key to orders
-  - `amount: Decimal`
-  - `status: PaymentStatusEnum` (`SUCCESSFUL`, `CANCELED`, `REFUNDED`)
-  - `external_payment_id: str | None`
-  - `created_at: datetime`
-- **PaymentItem**
-  - `id: int`
-  - `payment_id: int` — foreign key to Payment
-  - `order_item_id: int` — foreign key to OrderItem
-  - `price_at_payment: Decimal`
-
-- DB Schema https://dbdiagram.io/d/Payment-app-675f1a65e763df1f00ff70c6
-
----
-
-### Email Notifications
-- **Payment Success**
-  - Triggered after payment is successfully processed.
-  - Includes order details and amount.
-- **Payment Failed**
-  - Triggered if payment fails or is declined.
-  - Provides instructions to the user to retry or select a different payment method.
-
-All email sending is handled asynchronously via Celery tasks, ensuring non-blocking behavior during API calls.
-
 ---
 
 ## Orders Module Overview
@@ -432,6 +355,8 @@ Notes:
 Ensures historical financial accuracy even if movie prices change later.
 ```
 
+[Order DB schema](https://dbdiagram.io/d/Order-app-675f141ce763df1f00ff29cb)
+
 **Validation & Business Logic** - Ensures data integrity and security.
 
 ```
@@ -464,9 +389,86 @@ Ensures historical financial accuracy even if movie prices change later.
 
 **Admin/Moderator Functionality:**
 - `GET /orders/admin` — Get all system orders with filters:
-   - By User ID
-   - By Status (pending, paid, canceled)
-   - By Date Range
+- By User ID
+- By Status (pending, paid, canceled)
+- By Date Range
+
+---
+
+## Payments
+
+### Overview
+The payment system allows users to pay for orders using Stripe and receive email notifications about their payment status. It also supports admin views and webhook handling for transaction validation.
+
+### User Functionality
+- Users can create a payment for an order.
+- After successful payment:
+  - The order status is updated to `PAID`.
+  - The user receives an email confirmation.
+- Users can view a history of all their payments, including:
+  - Date and time of payment
+  - Amount
+  - Status (`pending`, `successful`, `canceled`, `refunded`)
+  - Itemized details of each order
+
+#### API Endpoints
+- `POST /payments/{order_id}` — Create payment for a specific order. Returns `client_secret` for Stripe.
+- `GET /payments/` — Get all payments of the authenticated user.
+
+### Admin Functionality
+- Admins can view all payments with optional filters:
+  - By user ID
+  - By status (`successful`, `canceled`, `refunded`)
+- Only users with `ADMIN` permission can access admin endpoints.
+
+#### API Endpoints
+- `GET /payments/admin` — Get all payments (admin only) with filters.
+
+### Payment Processing
+- Uses Stripe as the payment gateway.
+- Validates:
+  - Total amount of the order
+  - Order status (`PENDING`)
+  - User authentication
+- Creates `Payment` and `PaymentItem` records in the database.
+- Triggers **Celery tasks** to send payment notification emails:
+  - `send_payment_success_email_task` — sent after successful payment
+  - `send_payment_failed_email_task` — sent if payment fails
+
+### Webhooks
+- `POST /webhooks/stripe` — Receives Stripe events to validate payments and update order/payment statuses.
+- Updates Payment and Order status automatically based on webhook event type.
+- Sends email notifications for successful or failed payments via Celery tasks.
+
+### Database Models
+- **Payment**
+  - `id: int`
+  - `user_id: int` — foreign key to users
+  - `order_id: int` — foreign key to orders
+  - `amount: Decimal`
+  - `status: PaymentStatusEnum` (`SUCCESSFUL`, `CANCELED`, `REFUNDED`)
+  - `external_payment_id: str | None`
+  - `created_at: datetime`
+- **PaymentItem**
+  - `id: int`
+  - `payment_id: int` — foreign key to Payment
+  - `order_item_id: int` — foreign key to OrderItem
+  - `price_at_payment: Decimal`
+
+[Payment DB schema](https://dbdiagram.io/d/Payment-app-675f1a65e763df1f00ff70c6)
+
+### Email Notifications
+- **Payment Success**
+  - Triggered after payment is successfully processed.
+  - Includes order details and amount.
+- **Payment Failed**
+  - Triggered if payment fails or is declined.
+  - Provides instructions to the user to retry or select a different payment method.
+
+All email sending is handled asynchronously via Celery tasks, ensuring non-blocking behavior during API calls.
+
+---
+
 ## Stripe Payment Integration
 
 This section explains how to set up and test Stripe payments for the application.
@@ -507,5 +509,3 @@ Replace `<PAYMENT_INTENT_ID>` with the actual payment intent ID from your Stripe
 - Payment success/failure emails are sent automatically via Celery tasks.
 - Ensure MailHog (or your SMTP server) is running to view test emails.
 - Use pm_card_visa for testing successful payments, and other test payment methods for simulating different scenarios.
-
----
