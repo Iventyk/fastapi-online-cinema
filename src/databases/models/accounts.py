@@ -126,6 +126,12 @@ class UserModel(Base):
         "Favorite",
     )
 
+    movie_reactions = relationship(
+        "MovieReaction",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
     payments: Mapped[list["Payment"]] = relationship(
         "Payment",
         back_populates="user",

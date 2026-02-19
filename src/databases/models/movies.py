@@ -202,5 +202,6 @@ class Movie(Base):
 
     comments: Mapped[list["MovieComment"]] = relationship(
         "MovieComment",
+        back_populates="movie",
         cascade="all, delete-orphan",
     )

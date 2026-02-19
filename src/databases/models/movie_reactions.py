@@ -19,7 +19,7 @@ class MovieReaction(Base):
 
     value: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    user = relationship("UserModel")
+    user = relationship("UserModel", back_populates="movie_reactions")
     movie = relationship("Movie", back_populates="reactions")
 
     __table_args__ = (

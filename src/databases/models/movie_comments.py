@@ -21,5 +21,5 @@ class MovieComment(Base):
 
     text: Mapped[str] = mapped_column(Text, nullable=False)
 
-    user = relationship("UserModel")
-    movie = relationship("Movie")
+    user = relationship("UserModel", back_populates="movie_comments")
+    movie = relationship("Movie", back_populates="comments")
