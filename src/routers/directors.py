@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import Director, Movie
 from src.schemas.directors import DirectorCreate, DirectorRead
@@ -80,8 +80,13 @@ async def create_director(
 ) -> DirectorRead:
     director = Director(name=data.name)
     db.add(director)
-    await db.commit()
-    await db.refresh(director)
+
+    try:
+        await db.commit()
+        await db.refresh(director)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
     return DirectorRead(
         id=director.id,
@@ -109,5 +114,9 @@ async def delete_director(
             detail="Director not found",
         )
 
-    await db.delete(director)
-    await db.commit()
+    try:
+        await db.delete(director)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import Genre, Movie
 from src.schemas.genres import GenreCreate, GenreRead
@@ -79,8 +79,13 @@ async def create_genre(
 ) -> GenreRead:
     genre = Genre(name=data.name)
     db.add(genre)
-    await db.commit()
-    await db.refresh(genre)
+
+    try:
+        await db.commit()
+        await db.refresh(genre)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
     return GenreRead(
         id=genre.id,
@@ -106,5 +111,9 @@ async def delete_genre(
             detail="Genre not found",
         )
 
-    await db.delete(genre)
-    await db.commit()
+    try:
+        await db.delete(genre)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

@@ -2,6 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.databases.dev_engine import get_db
@@ -76,8 +77,13 @@ async def create_star(
 ) -> StarRead:
     star = Star(name=data.name)
     db.add(star)
-    await db.commit()
-    await db.refresh(star)
+
+    try:
+        await db.commit()
+        await db.refresh(star)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
     return StarRead(
         id=star.id,
@@ -103,5 +109,9 @@ async def delete_star(
             detail="Star not found",
         )
 
-    await db.delete(star)
-    await db.commit()
+    try:
+        await db.delete(star)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

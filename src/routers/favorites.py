@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
 from src.databases.dev_engine import get_db
 from src.databases.models.favorites import Favorite
 from src.databases.models.movies import Movie
@@ -33,8 +33,12 @@ async def add_to_favorites(
         )
 
     db.add(Favorite(user_id=user.id, movie_id=movie_id))
-    await db.commit()
 
+    try:
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_from_favorites(
@@ -56,9 +60,12 @@ async def remove_from_favorites(
             detail="Favorite not found",
         )
 
-    await db.delete(favorite)
-    await db.commit()
-
+    try:
+        await db.delete(favorite)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 @router.get("", response_model=List[MovieListItem])
 async def get_favorites(
