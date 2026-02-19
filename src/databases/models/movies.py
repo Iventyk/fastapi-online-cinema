@@ -122,6 +122,7 @@ class Certification(Base):
         lazy="selectin",
     )
 
+
 class MovieComment(Base):
     __tablename__ = "movie_comments"
 
@@ -141,6 +142,7 @@ class MovieComment(Base):
 
     user = relationship("UserModel", back_populates="movie_comments")
     movie = relationship("Movie", back_populates="comments")
+
 
 class MovieReaction(Base):
     __tablename__ = "movie_reactions"
@@ -168,6 +170,7 @@ class MovieReaction(Base):
         ),
     )
 
+
 class Movie(Base):
     __tablename__ = "movies"
     __table_args__ = (
@@ -188,7 +191,9 @@ class Movie(Base):
     year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     time: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    imdb: Mapped[Decimal] = mapped_column(Numeric(3, 1), nullable=False, index=True)
+    imdb: Mapped[Decimal] = mapped_column(
+        Numeric(3, 1), nullable=False, index=True
+    )
     votes: Mapped[int] = mapped_column(Integer, nullable=False)
 
     meta_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)

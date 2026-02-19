@@ -40,6 +40,7 @@ async def add_to_favorites(
         await db.rollback()
         raise
 
+
 @router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_from_favorites(
     movie_id: int,
@@ -66,6 +67,7 @@ async def remove_from_favorites(
     except SQLAlchemyError:
         await db.rollback()
         raise
+
 
 @router.get("", response_model=List[MovieListItem])
 async def get_favorites(
