@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from src.databases.models.movie_comments import MovieComment
+from src.databases.models.movies import MovieComment
 
 
 async def create_comment(

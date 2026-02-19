@@ -23,8 +23,6 @@ from sqlalchemy.orm import (
 
 from .base import Base
 from src.databases.models.favorites import Favorite
-from src.databases.models.movie_reactions import MovieReaction
-from src.databases.models.movie_comments import MovieComment
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
@@ -124,6 +122,51 @@ class Certification(Base):
         lazy="selectin",
     )
 
+class MovieComment(Base):
+    __tablename__ = "movie_comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    user = relationship("UserModel", back_populates="movie_comments")
+    movie = relationship("Movie", back_populates="comments")
+
+class MovieReaction(Base):
+    __tablename__ = "movie_reactions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    user = relationship("UserModel", back_populates="movie_reactions")
+    movie = relationship("Movie", back_populates="reactions")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "movie_id",
+            name="uq_user_movie_reaction",
+        ),
+    )
 
 class Movie(Base):
     __tablename__ = "movies"

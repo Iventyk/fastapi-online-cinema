@@ -1,7 +1,7 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from src.databases.models.movie_reactions import MovieReaction
+from src.databases.models.movies import MovieReaction
 
 
 async def set_reaction(
