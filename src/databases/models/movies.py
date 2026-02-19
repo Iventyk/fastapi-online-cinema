@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 from typing import List, Optional, TYPE_CHECKING
+from decimal import Decimal
 
 from sqlalchemy import (
     Table,
@@ -8,8 +9,10 @@ from sqlalchemy import (
     Integer,
     Float,
     Text,
+    Numeric,
     ForeignKey,
     UniqueConstraint,
+    CheckConstraint,
     DECIMAL,
 )
 from sqlalchemy.orm import (
@@ -128,6 +131,7 @@ class Movie(Base):
         UniqueConstraint(
             "name", "year", "time", name="uq_movie_name_year_time"
         ),
+        CheckConstraint("imdb >= 0 AND imdb <= 10", name="imdb_range"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -141,7 +145,7 @@ class Movie(Base):
     year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     time: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    imdb: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    imdb: Mapped[Decimal] = mapped_column(Numeric(3, 1), nullable=False, index=True)
     votes: Mapped[int] = mapped_column(Integer, nullable=False)
 
     meta_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
