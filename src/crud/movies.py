@@ -2,7 +2,7 @@ from typing import Optional
 
 from sqlalchemy import select, or_, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
 from src.databases.models.movies import Movie, Genre, Star, Director
 from src.schemas.movies import MovieCreate, MovieUpdate
 
@@ -115,9 +115,13 @@ async def create_movie(
         )
         movie.directors = list(directors.scalars())
 
-    db.add(movie)
-    await db.commit()
-    await db.refresh(movie)
+    try:
+        db.add(movie)
+        await db.commit()
+        await db.refresh(movie)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return movie
 
 
@@ -150,8 +154,12 @@ async def update_movie(
         )
         movie.directors = list(directors.scalars())
 
-    await db.commit()
-    await db.refresh(movie)
+    try:
+        await db.commit()
+        await db.refresh(movie)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return movie
 
 
@@ -160,5 +168,9 @@ async def delete_movie(
     *,
     movie: Movie,
 ) -> None:
-    await db.delete(movie)
-    await db.commit()
+    try:
+        await db.delete(movie)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
