@@ -20,6 +20,12 @@ router = APIRouter(
     "",
     response_model=CertificationRead,
     status_code=status.HTTP_201_CREATED,
+    summary="Create certification",
+    description="Creates a new certification record.",
+    responses={
+        201: {"description": "Certification successfully created"},
+        422: {"description": "Validation error"},
+    },
 )
 async def create_certification(
     data: CertificationCreate,
@@ -32,6 +38,11 @@ async def create_certification(
 @router.get(
     "",
     response_model=List[CertificationRead],
+    summary="Get all certifications",
+    description="Returns a list of all certifications.",
+    responses={
+        200: {"description": "List of certifications"},
+    },
 )
 async def get_certifications(
     db: AsyncSession = Depends(get_db),

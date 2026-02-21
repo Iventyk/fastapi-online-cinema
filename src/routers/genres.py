@@ -12,7 +12,15 @@ from src.schemas.movies import MovieListItem
 router = APIRouter(prefix="/genres", tags=["Genres"])
 
 
-@router.get("", response_model=List[GenreRead])
+@router.get(
+    "",
+    response_model=List[GenreRead],
+    summary="Get all genres",
+    description="Returns all genres with number of associated movies.",
+    responses={
+        200: {"description": "List of genres"},
+    },
+)
 async def get_genres(db: AsyncSession = Depends(get_db)) -> List[GenreRead]:
     stmt = (
         select(
@@ -40,6 +48,13 @@ async def get_genres(db: AsyncSession = Depends(get_db)) -> List[GenreRead]:
 @router.get(
     "/{genre_id}/movies",
     response_model=List[MovieListItem],
+    summary="Get movies by genre",
+    description="Returns all movies that belong to a specific genre.",
+    responses={
+        200: {"description": "List of movies for the genre"},
+        404: {"description": "Genre not found"},
+        500: {"description": "Database error"},
+    },
 )
 async def get_genre_movies(
     genre_id: int,
@@ -72,6 +87,12 @@ async def get_genre_movies(
     "",
     response_model=GenreRead,
     status_code=status.HTTP_201_CREATED,
+    summary="Create genre",
+    description="Creates a new genre.",
+    responses={
+        201: {"description": "Genre created"},
+        422: {"description": "Validation error"},
+    },
 )
 async def create_genre(
     data: GenreCreate,
@@ -97,6 +118,12 @@ async def create_genre(
 @router.delete(
     "/{genre_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete genre",
+    description="Deletes a genre by ID.",
+    responses={
+        204: {"description": "Genre deleted"},
+        404: {"description": "Genre not found"},
+    },
 )
 async def delete_genre(
     genre_id: int,

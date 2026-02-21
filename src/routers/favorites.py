@@ -14,7 +14,17 @@ from src.databases.models.accounts import UserModel
 router = APIRouter(prefix="/favorites", tags=["Favorites"])
 
 
-@router.post("/{movie_id}", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{movie_id}",
+    status_code=status.HTTP_201_CREATED,
+    summary="Add movie to favorites",
+    description="Adds a movie to the authenticated user's favorites.",
+    responses={
+        201: {"description": "Movie added to favorites"},
+        400: {"description": "Movie already in favorites"},
+        401: {"description": "Unauthorized"},
+    },
+)
 async def add_to_favorites(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -41,7 +51,18 @@ async def add_to_favorites(
         raise
 
 
-@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{movie_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove movie from favorites",
+    description="Removes a movie from the authenticated user's favorites list.",
+    responses={
+        204: {"description": "Movie successfully removed from favorites"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Favorite not found"},
+        500: {"description": "Database error"},
+    },
+)
 async def remove_from_favorites(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -69,7 +90,16 @@ async def remove_from_favorites(
         raise
 
 
-@router.get("", response_model=List[MovieListItem])
+@router.get(
+    "",
+    response_model=List[MovieListItem],
+    summary="Get user favorites",
+    description="Returns all favorite movies of the authenticated user.",
+    responses={
+        200: {"description": "List of favorite movies"},
+        401: {"description": "Unauthorized"},
+    },
+)
 async def get_favorites(
     db: AsyncSession = Depends(get_db),
     user: UserModel = Depends(get_current_user),

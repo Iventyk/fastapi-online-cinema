@@ -16,6 +16,14 @@ router = APIRouter(prefix="/movies", tags=["Comments"])
     "/{movie_id}/comments",
     response_model=CommentRead,
     status_code=status.HTTP_201_CREATED,
+    summary="Add comment to movie",
+    description="Adds a new comment to a movie. Requires authentication.",
+    responses={
+        201: {"description": "Comment successfully created"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Movie not found"},
+        422: {"description": "Validation error"},
+    },
 )
 async def add_comment(
     movie_id: int,
@@ -35,6 +43,12 @@ async def add_comment(
 @router.get(
     "/{movie_id}/comments",
     response_model=List[CommentRead],
+    summary="Get movie comments",
+    description="Returns all comments for a specific movie.",
+    responses={
+        200: {"description": "List of comments"},
+        404: {"description": "Movie not found"},
+    },
 )
 async def get_comments(
     movie_id: int,
@@ -50,6 +64,13 @@ async def get_comments(
 @router.delete(
     "/comments/{comment_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete comment",
+    description="Deletes a user's own comment.",
+    responses={
+        204: {"description": "Comment deleted"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Comment not found"},
+    },
 )
 async def delete_comment(
     comment_id: int,
