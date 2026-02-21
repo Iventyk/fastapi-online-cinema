@@ -55,7 +55,8 @@ async def add_to_favorites(
     "/{movie_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Remove movie from favorites",
-    description="Removes a movie from the authenticated user's favorites list.",
+    description="Removes a movie"
+                " from the authenticated user's favorites list.",
     responses={
         204: {"description": "Movie successfully removed from favorites"},
         401: {"description": "Unauthorized"},

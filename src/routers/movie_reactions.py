@@ -14,7 +14,8 @@ router = APIRouter(prefix="/movies", tags=["Movie reactions"])
     "/{movie_id}/like",
     status_code=status.HTTP_201_CREATED,
     summary="Like a movie",
-    description="Sets user's reaction to LIKE (+1). If reaction exists, it will be updated.",
+    description="Sets user's reaction to LIKE (+1)."
+                " If reaction exists, it will be updated.",
     responses={
         201: {"description": "Movie liked"},
         401: {"description": "Unauthorized"},
@@ -38,7 +39,8 @@ async def like_movie(
     "/{movie_id}/dislike",
     status_code=status.HTTP_201_CREATED,
     summary="Dislike a movie",
-    description="Sets user's reaction to DISLIKE (-1). If reaction exists, it will be updated.",
+    description="Sets user's reaction to DISLIKE (-1)."
+                "If reaction exists, it will be updated.",
     responses={
         201: {"description": "Movie disliked"},
         401: {"description": "Unauthorized"},
