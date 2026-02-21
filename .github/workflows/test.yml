@@ -82,10 +82,7 @@ jobs:
 
       - name: Run tests inside container with coverage
         run: |
-          docker compose run --rm web poetry run pytest --cov=src --cov-report=xml --cov-report=term
-
-      - name: Copy coverage.xml from container
-        run: docker compose cp web:/app/coverage.xml ./coverage.xml
+          docker compose run --rm -v ${{ github.workspace }}:/app web poetry run pytest --cov=src --cov-report=xml --cov-report=term
 
       - name: Shutdown services
         if: always()
