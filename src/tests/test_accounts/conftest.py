@@ -53,6 +53,8 @@ async def client(
 
 @pytest.fixture(autouse=True)
 def mock_celery():
-    with patch("src.crud.accounts.send_activation_email_task.delay"), \
-         patch("src.crud.accounts.send_activation_complete_email_task.delay"):
+    with (
+        patch("src.crud.accounts.send_activation_email_task.delay"),
+        patch("src.crud.accounts.send_activation_complete_email_task.delay"),
+    ):
         yield

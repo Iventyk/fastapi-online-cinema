@@ -57,6 +57,10 @@ async def client(
 
 @pytest.fixture(autouse=True)
 def mock_celery():
-    with patch("src.crud.password.send_password_reset_email_task.delay"), \
-         patch("src.crud.password.send_password_reset_complete_email_task.delay"):
+    with (
+        patch("src.crud.password.send_password_reset_email_task.delay"),
+        patch(
+            "src.crud.password.send_password_reset_complete_email_task.delay"
+        ),
+    ):
         yield
