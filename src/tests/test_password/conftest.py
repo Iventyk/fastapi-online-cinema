@@ -1,5 +1,5 @@
 from typing import AsyncGenerator, Any
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -57,7 +57,6 @@ async def client(
 
 @pytest.fixture(autouse=True)
 def mock_celery():
-    from src.tasks import send_password_reset_email_task
-
-    send_password_reset_email_task.delay = MagicMock()
-    return send_password_reset_email_task.delay
+    with patch("src.crud.password.send_password_reset_email_task.delay"), \
+         patch("src.crud.password.send_password_reset_complete_email_task.delay"):
+        yield

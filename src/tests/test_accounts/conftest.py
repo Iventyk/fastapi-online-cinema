@@ -1,5 +1,5 @@
 from typing import AsyncGenerator, Any
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
@@ -53,7 +53,6 @@ async def client(
 
 @pytest.fixture(autouse=True)
 def mock_celery():
-    from src.tasks import send_activation_email_task
-
-    send_activation_email_task.delay = MagicMock()
-    return send_activation_email_task.delay
+    with patch("src.crud.accounts.send_activation_email_task.delay"), \
+         patch("src.crud.accounts.send_activation_complete_email_task.delay"):
+        yield
