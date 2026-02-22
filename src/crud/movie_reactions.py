@@ -1,7 +1,7 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.databases.models.movie_reactions import MovieReaction
+from sqlalchemy.exc import SQLAlchemyError
+from src.databases.models.movies import MovieReaction
 
 
 async def set_reaction(
@@ -30,7 +30,11 @@ async def set_reaction(
             )
         )
 
-    await db.commit()
+    try:
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
 
 async def remove_reaction(
@@ -50,8 +54,12 @@ async def remove_reaction(
     if not reaction:
         return False
 
-    await db.delete(reaction)
-    await db.commit()
+    try:
+        await db.delete(reaction)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return True
 
 

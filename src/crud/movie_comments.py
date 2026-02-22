@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from src.databases.models.movie_comments import MovieComment
+from sqlalchemy.exc import SQLAlchemyError
+from src.databases.models.movies import MovieComment
 
 
 async def create_comment(
@@ -16,9 +16,13 @@ async def create_comment(
         user_id=user_id,
         text=text,
     )
-    db.add(comment)
-    await db.commit()
-    await db.refresh(comment)
+    try:
+        db.add(comment)
+        await db.commit()
+        await db.refresh(comment)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return comment
 
 
@@ -47,6 +51,10 @@ async def delete_comment(
     if not comment or comment.user_id != user_id:
         return False
 
-    await db.delete(comment)
-    await db.commit()
+    try:
+        await db.delete(comment)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return True

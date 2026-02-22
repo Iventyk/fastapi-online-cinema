@@ -2,7 +2,8 @@ from typing import Optional
 
 from sqlalchemy import select, or_, asc, desc
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import selectinload
 from src.databases.models.movies import Movie, Genre, Star, Director
 from src.schemas.movies import MovieCreate, MovieUpdate
 
@@ -24,7 +25,16 @@ async def get_movies(
     sort_by: Optional[str],
     order: str,
 ) -> list[Movie]:
-    stmt = select(Movie).distinct()
+    stmt = (
+        select(Movie)
+        .options(
+            selectinload(Movie.genres),
+            selectinload(Movie.stars),
+            selectinload(Movie.directors),
+            selectinload(Movie.certification),
+        )
+        .distinct()
+    )
 
     if search:
         stmt = (
@@ -75,7 +85,18 @@ async def get_movie_by_id(
     *,
     movie_id: int,
 ) -> Movie | None:
-    result = await db.execute(select(Movie).where(Movie.id == movie_id))
+    result = await db.execute(
+        select(Movie)
+        .options(
+            selectinload(Movie.genres),
+            selectinload(Movie.stars),
+            selectinload(Movie.directors),
+            selectinload(Movie.certification),
+            selectinload(Movie.comments),
+            selectinload(Movie.reactions),
+        )
+        .where(Movie.id == movie_id)
+    )
     return result.scalar_one_or_none()
 
 
@@ -115,9 +136,13 @@ async def create_movie(
         )
         movie.directors = list(directors.scalars())
 
-    db.add(movie)
-    await db.commit()
-    await db.refresh(movie)
+    try:
+        db.add(movie)
+        await db.commit()
+        await db.refresh(movie)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return movie
 
 
@@ -150,8 +175,12 @@ async def update_movie(
         )
         movie.directors = list(directors.scalars())
 
-    await db.commit()
-    await db.refresh(movie)
+    try:
+        await db.commit()
+        await db.refresh(movie)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return movie
 
 
@@ -160,5 +189,9 @@ async def delete_movie(
     *,
     movie: Movie,
 ) -> None:
-    await db.delete(movie)
-    await db.commit()
+    try:
+        await db.delete(movie)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

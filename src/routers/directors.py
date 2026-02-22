@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy.exc import SQLAlchemyError
 from src.databases.dev_engine import get_db
 from src.databases.models.movies import Director, Movie
 from src.schemas.directors import DirectorCreate, DirectorRead
@@ -12,7 +12,15 @@ from src.schemas.movies import MovieListItem
 router = APIRouter(prefix="/directors", tags=["Directors"])
 
 
-@router.get("", response_model=List[DirectorRead])
+@router.get(
+    "",
+    response_model=List[DirectorRead],
+    summary="Get all directors",
+    description="Returns all directors with the number of associated movies.",
+    responses={
+        200: {"description": "List of directors"},
+    },
+)
 async def get_directors(
     db: AsyncSession = Depends(get_db),
 ) -> List[DirectorRead]:
@@ -39,7 +47,16 @@ async def get_directors(
     ]
 
 
-@router.get("/{director_id}/movies")
+@router.get(
+    "/{director_id}/movies",
+    response_model=List[MovieListItem],
+    summary="Get movies by director",
+    description="Returns all movies created by a specific director.",
+    responses={
+        200: {"description": "List of movies"},
+        404: {"description": "Director not found"},
+    },
+)
 async def get_director_movies(
     director_id: int,
     db: AsyncSession = Depends(get_db),
@@ -73,6 +90,12 @@ async def get_director_movies(
     "",
     response_model=DirectorRead,
     status_code=status.HTTP_201_CREATED,
+    summary="Create director",
+    description="Creates a new director.",
+    responses={
+        201: {"description": "Director successfully created"},
+        422: {"description": "Validation error"},
+    },
 )
 async def create_director(
     data: DirectorCreate,
@@ -80,8 +103,13 @@ async def create_director(
 ) -> DirectorRead:
     director = Director(name=data.name)
     db.add(director)
-    await db.commit()
-    await db.refresh(director)
+
+    try:
+        await db.commit()
+        await db.refresh(director)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
 
     return DirectorRead(
         id=director.id,
@@ -93,6 +121,12 @@ async def create_director(
 @router.delete(
     "/{director_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete director",
+    description="Deletes a director by ID.",
+    responses={
+        204: {"description": "Director deleted"},
+        404: {"description": "Director not found"},
+    },
 )
 async def delete_director(
     director_id: int,
@@ -109,5 +143,9 @@ async def delete_director(
             detail="Director not found",
         )
 
-    await db.delete(director)
-    await db.commit()
+    try:
+        await db.delete(director)
+        await db.commit()
+    except SQLAlchemyError:
+        await db.rollback()
+        raise

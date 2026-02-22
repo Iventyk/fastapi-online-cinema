@@ -15,7 +15,20 @@ from src.crud import movies as crud
 router = APIRouter(prefix="/movies", tags=["Movies"])
 
 
-@router.get("", response_model=list[MovieListItem])
+@router.get(
+    "",
+    response_model=list[MovieListItem],
+    summary="Get movies list",
+    description="""
+Returns paginated list of movies.
+
+Supports:
+- search by title, description, director, or star
+- filtering by year, IMDb rating, price
+- filtering by genre and certification
+- sorting by price, year or IMDb
+""",
+)
 async def get_movies(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
@@ -52,7 +65,14 @@ async def get_movies(
     return [MovieListItem.model_validate(m) for m in movies]
 
 
-@router.get("/{movie_id}", response_model=MovieRead)
+@router.get(
+    "/{movie_id}",
+    response_model=MovieRead,
+    summary="Get movie details",
+    responses={
+        404: {"description": "Movie not found"},
+    },
+)
 async def get_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -72,6 +92,11 @@ async def get_movie(
     "",
     response_model=MovieRead,
     status_code=status.HTTP_201_CREATED,
+    summary="Create new movie",
+    responses={
+        201: {"description": "Movie successfully created"},
+        400: {"description": "Invalid input data"},
+    },
 )
 async def create_movie(
     data: MovieCreate,
@@ -81,7 +106,14 @@ async def create_movie(
     return MovieRead.model_validate(movie)
 
 
-@router.put("/{movie_id}", response_model=MovieRead)
+@router.put(
+    "/{movie_id}",
+    response_model=MovieRead,
+    summary="Update movie",
+    responses={
+        404: {"description": "Movie not found"},
+    },
+)
 async def update_movie(
     movie_id: int,
     data: MovieUpdate,
@@ -99,7 +131,14 @@ async def update_movie(
     return MovieRead.model_validate(movie)
 
 
-@router.delete("/{movie_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{movie_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete movie",
+    responses={
+        404: {"description": "Movie not found"},
+    },
+)
 async def delete_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),

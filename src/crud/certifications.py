@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
 
 from src.databases.models.movies import Certification
@@ -12,8 +13,13 @@ async def create_certification(
 ) -> Certification:
     cert = Certification(name=data.name)
     db.add(cert)
-    await db.commit()
-    await db.refresh(cert)
+
+    try:
+        await db.commit()
+        await db.refresh(cert)
+    except SQLAlchemyError:
+        await db.rollback()
+        raise
     return cert
 
 

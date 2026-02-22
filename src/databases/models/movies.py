@@ -1,5 +1,6 @@
 from uuid import UUID, uuid4
 from typing import List, Optional, TYPE_CHECKING
+from decimal import Decimal
 
 from sqlalchemy import (
     Table,
@@ -8,8 +9,10 @@ from sqlalchemy import (
     Integer,
     Float,
     Text,
+    Numeric,
     ForeignKey,
     UniqueConstraint,
+    CheckConstraint,
     DECIMAL,
 )
 from sqlalchemy.orm import (
@@ -20,8 +23,6 @@ from sqlalchemy.orm import (
 
 from .base import Base
 from src.databases.models.favorites import Favorite
-from src.databases.models.movie_reactions import MovieReaction
-from src.databases.models.movie_comments import MovieComment
 
 if TYPE_CHECKING:
     from src.databases.models import CartItem
@@ -122,12 +123,61 @@ class Certification(Base):
     )
 
 
+class MovieComment(Base):
+    __tablename__ = "movie_comments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+
+    user = relationship("UserModel", back_populates="movie_comments")
+    movie = relationship("Movie", back_populates="comments")
+
+
+class MovieReaction(Base):
+    __tablename__ = "movie_reactions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    value: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    user = relationship("UserModel", back_populates="movie_reactions")
+    movie = relationship("Movie", back_populates="reactions")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "movie_id",
+            name="uq_user_movie_reaction",
+        ),
+    )
+
+
 class Movie(Base):
     __tablename__ = "movies"
     __table_args__ = (
         UniqueConstraint(
             "name", "year", "time", name="uq_movie_name_year_time"
         ),
+        CheckConstraint("imdb >= 0 AND imdb <= 10", name="imdb_range"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -141,7 +191,9 @@ class Movie(Base):
     year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     time: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    imdb: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    imdb: Mapped[Decimal] = mapped_column(
+        Numeric(3, 1), nullable=False, index=True
+    )
     votes: Mapped[int] = mapped_column(Integer, nullable=False)
 
     meta_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
@@ -198,5 +250,6 @@ class Movie(Base):
 
     comments: Mapped[list["MovieComment"]] = relationship(
         "MovieComment",
+        back_populates="movie",
         cascade="all, delete-orphan",
     )

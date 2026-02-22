@@ -10,7 +10,18 @@ from src.crud import movie_reactions as crud
 router = APIRouter(prefix="/movies", tags=["Movie reactions"])
 
 
-@router.post("/{movie_id}/like", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{movie_id}/like",
+    status_code=status.HTTP_201_CREATED,
+    summary="Like a movie",
+    description="Sets user's reaction to LIKE (+1)."
+    " If reaction exists, it will be updated.",
+    responses={
+        201: {"description": "Movie liked"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Movie not found"},
+    },
+)
 async def like_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -24,7 +35,18 @@ async def like_movie(
     )
 
 
-@router.post("/{movie_id}/dislike", status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{movie_id}/dislike",
+    status_code=status.HTTP_201_CREATED,
+    summary="Dislike a movie",
+    description="Sets user's reaction to DISLIKE (-1)."
+    "If reaction exists, it will be updated.",
+    responses={
+        201: {"description": "Movie disliked"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Movie not found"},
+    },
+)
 async def dislike_movie(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -38,7 +60,17 @@ async def dislike_movie(
     )
 
 
-@router.delete("/{movie_id}/reaction", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{movie_id}/reaction",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove movie reaction",
+    description="Removes user's reaction (like/dislike) from a movie.",
+    responses={
+        204: {"description": "Reaction removed"},
+        401: {"description": "Unauthorized"},
+        404: {"description": "Reaction not found"},
+    },
+)
 async def remove_reaction(
     movie_id: int,
     db: AsyncSession = Depends(get_db),
@@ -60,6 +92,12 @@ async def remove_reaction(
 @router.get(
     "/{movie_id}/reactions",
     response_model=MovieReactionRead,
+    summary="Get movie reactions statistics",
+    description="Returns total likes and dislikes for a movie.",
+    responses={
+        200: {"description": "Reaction statistics"},
+        404: {"description": "Movie not found"},
+    },
 )
 async def get_movie_reactions(
     movie_id: int,

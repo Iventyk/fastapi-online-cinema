@@ -1,6 +1,6 @@
 from typing import List, Optional
 from uuid import UUID
-
+from decimal import Decimal
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -37,7 +37,7 @@ class MovieCreate(BaseModel):
     year: int
     time: int
 
-    imdb: float
+    imdb: Decimal
     votes: int
 
     meta_score: Optional[float] = None
@@ -58,7 +58,7 @@ class MovieUpdate(BaseModel):
     year: Optional[int] = None
     time: Optional[int] = None
 
-    imdb: Optional[float] = None
+    imdb: Optional[Decimal] = None
     votes: Optional[int] = None
 
     meta_score: Optional[float] = None
@@ -82,7 +82,7 @@ class MovieListItem(BaseModel):
     year: int
     time: int
 
-    imdb: float
+    imdb: Decimal
     price: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -96,7 +96,7 @@ class MovieRead(BaseModel):
     year: int
     time: int
 
-    imdb: float
+    imdb: Decimal
     votes: int
     meta_score: Optional[float]
     gross: Optional[float]
