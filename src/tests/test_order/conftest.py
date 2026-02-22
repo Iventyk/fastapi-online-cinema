@@ -2,11 +2,11 @@ import asyncio
 import decimal
 import uuid
 from decimal import Decimal
-from typing import AsyncGenerator, Generator, Any, List
+from typing import AsyncGenerator, Generator, Any
 
 import pytest
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy import event, select
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,

@@ -11,13 +11,12 @@ from src.crud.orders import (
     cancel_order,
     revalidate_order_prices,
 )
-from src.databases.models.orders import Order, OrderItem, StatusEnum
+from src.databases.models.orders import Order, StatusEnum
 from src.databases.models.movies import Movie
 from src.databases.models.accounts import UserModel
 from src.exceptions import MovieAlreadyPurchased, MovieDoesNotExist
 from src.exceptions.orders import (
     OrderNotFound,
-    OrderCancellationNotPossible,
     PendingOrderExists,
     OrderAlreadyPaid,
 )

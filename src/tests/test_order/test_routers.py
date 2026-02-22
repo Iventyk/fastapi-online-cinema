@@ -5,7 +5,6 @@ from fastapi import status
 from httpx import AsyncClient
 from pytest_mock import MockerFixture
 
-from src.main import app
 from src.exceptions import MovieAlreadyPurchased, OrderNotFound
 from src.exceptions.orders import PendingOrderExists, OrderAlreadyPaid
 from src.databases.models.orders import StatusEnum
